@@ -8,7 +8,7 @@ const NOT_CONFIGURED =
   "Database is not configured. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to .env.local.";
 
 export async function GET() {
-  if (!(await isAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!databaseConfigured()) return NextResponse.json({ error: NOT_CONFIGURED }, { status: 503 });
   try {
     return NextResponse.json(await getInventory());
@@ -21,7 +21,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await isAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!databaseConfigured()) return NextResponse.json({ error: NOT_CONFIGURED }, { status: 503 });
   const { paddles, balls } = await req.json().catch(() => ({}));
   try {

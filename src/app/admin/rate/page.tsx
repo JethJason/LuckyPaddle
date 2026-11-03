@@ -4,7 +4,7 @@ import { isAdmin } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function RatePage() {
-  if (!(await isAdmin())) redirect("/admin/login");
+export default function RatePage() {
+  if (!isAdmin()) redirect("/admin/login");
   return <RateEditor />;
 }

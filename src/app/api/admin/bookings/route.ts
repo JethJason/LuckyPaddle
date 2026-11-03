@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { isAdmin } from "@/lib/admin-auth";
 import { sendConfirmation, sendRejection } from "@/lib/email";
 import { databaseConfigured, listBookings, review } from "@/lib/store";
 
@@ -9,7 +9,7 @@ const NOT_CONFIGURED =
   "Database is not configured. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to .env.local.";
 
 export async function GET() {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!databaseConfigured()) return NextResponse.json({ error: NOT_CONFIGURED }, { status: 503 });
   try {
     return NextResponse.json({ bookings: await listBookings() });
@@ -22,8 +22,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const admin = await getAdminSession();
-  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!databaseConfigured()) return NextResponse.json({ error: NOT_CONFIGURED }, { status: 503 });
 
   const { id, action } = await req.json().catch(() => ({}));
@@ -31,10 +30,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
 
   try {
-    const booking = await review(id, action === "approve" ? "approved" : "rejected", {
-      id: admin.id,
-      displayName: admin.displayName,
-    });
+    const booking = await review(id, action === "approve" ? "approved" : "rejected");
     if (!booking)
       return NextResponse.json({ error: "Already reviewed or not found." }, { status: 409 });
 
