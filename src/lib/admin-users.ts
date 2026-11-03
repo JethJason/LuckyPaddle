@@ -66,6 +66,28 @@ export async function changeAdminPassword(id: string, currentPassword: string, n
   return data ? "updated" as const : "conflict" as const;
 }
 
+export async function changeAdminUsername(id: string, currentPassword: string, newUsername: string) {
+  const { data: user, error: findError } = await supabase
+    .from("admin_users")
+    .select("username,password_hash,active")
+    .eq("id", id)
+    .maybeSingle();
+  if (findError) throw findError;
+  if (!user || !user.active) return "not_found" as const;
+  if (!(await verifyAdminPassword(currentPassword, user.password_hash))) return "invalid_current" as const;
+  if (user.username === newUsername) return "unchanged" as const;
+
+  const { data, error } = await supabase
+    .from("admin_users")
+    .update({ username: newUsername })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (error?.code === "23505") return "taken" as const;
+  if (error) throw error;
+  return data ? "updated" as const : "not_found" as const;
+}
+
 export async function listAdminUsers(): Promise<AdminUser[]> {
   const { data, error } = await supabase
     .from("admin_users")
