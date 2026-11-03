@@ -7,7 +7,7 @@ see who approved or rejected each booking.
 ## Features
 
 - 10-minute slot holds with a live countdown (double-booking is blocked by the database)
-- Multi-hour bookings with time-based rates (default: 8 AM-5 PM ₱500, 5 PM-1 AM ₱600)
+- Multi-hour bookings with time-based rates (default: 8 AM-noon ₱350, noon-5 PM ₱500, 5 PM-1 AM ₱600); save an additional ₱50 per hour on bookings of 3+ hours
 - Paddle and ball add-ons, limited by the inventory you set in admin
 - QR payment (GCash/Maya) with a payment reference number
 - Admin approval queue; the confirmation email is sent **only when an admin approves**
