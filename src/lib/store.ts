@@ -36,9 +36,6 @@ export interface Booking {
   proofPath?: string;
   proofUrl?: string;
   createdBy?: "customer" | "admin";
-  reviewedBy?: string;
-  reviewedAt?: number;
-  reviewedById?: string;
 }
 
 export const DEFAULT_TIME_RATES: TimeRate[] = [
@@ -68,9 +65,6 @@ type BookingRow = {
   balls: number | null;
   proof_path: string | null;
   created_by: string | null;
-  reviewed_by: string | null;
-  reviewed_by_name: string | null;
-  reviewed_at: string | null;
 };
 
 type BlockRow = {
@@ -101,9 +95,6 @@ const rowToBooking = (row: BookingRow): Booking => ({
   balls: row.balls ?? 0,
   proofPath: row.proof_path ?? undefined,
   createdBy: row.created_by === "admin" ? "admin" : "customer",
-  reviewedById: row.reviewed_by ?? undefined,
-  reviewedBy: row.reviewed_by_name ?? undefined,
-  reviewedAt: row.reviewed_at ? Date.parse(row.reviewed_at) : undefined,
 });
 
 const rowToBlock = (row: BlockRow): Block => ({
@@ -347,19 +338,10 @@ export async function submitPayment(
 }
 
 /** Only bookings still awaiting review can be approved or rejected (rejecting frees the slot). */
-export async function review(
-  id: string,
-  status: "approved" | "rejected",
-  reviewer: { id: string; displayName: string },
-) {
+export async function review(id: string, status: "approved" | "rejected") {
   const { data, error } = await supabase
     .from("bookings")
-    .update({
-      status,
-      reviewed_by: reviewer.id,
-      reviewed_by_name: reviewer.displayName,
-      reviewed_at: new Date().toISOString(),
-    })
+    .update({ status })
     .eq("id", id)
     .eq("status", "awaiting_review")
     .select()

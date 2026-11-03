@@ -15,7 +15,6 @@ interface DashboardData {
   date: string;
   today: string;
   court: string;
-  admin: { id: string; displayName: string; role: "owner" | "admin" };
   stats: {
     revenue: number;
     approvedCount: number;
@@ -162,8 +161,6 @@ export default function AdminDashboard() {
           <a href="/admin/reserve" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Reserve</a>
           <a href="/admin/block" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Block time</a>
           <a href="/admin/rate" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Court rates</a>
-          {data?.admin.role === "owner" && <a href="/admin/users" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Users</a>}
-          {data?.admin && <span className="hidden text-xs font-medium text-pine/55 xl:inline">Signed in as {data.admin.displayName}</span>}
           <a href="/" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">View site</a>
           <button onClick={signOut} className="rounded-full bg-pine px-4 py-2 text-sm font-medium text-white transition hover:bg-court">
             Sign out
@@ -277,8 +274,8 @@ export default function AdminDashboard() {
             )}
           </section>
 
-          <section className="mt-5 grid items-stretch gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.35fr)]">
-            <div className="glass flex h-full min-w-0 flex-col self-stretch rounded-3xl p-5 sm:p-6">
+          <section className="mt-5 grid items-stretch gap-5 lg:grid-cols-[1.05fr_1.35fr]">
+            <div className="glass flex h-full flex-col rounded-3xl p-5 sm:p-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="font-display text-xl font-semibold">Court schedule</h2>
@@ -335,7 +332,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="glass flex h-full min-w-0 flex-col self-stretch rounded-3xl p-5 sm:p-6">
+            <div className="glass flex h-full flex-col rounded-3xl p-5 sm:p-6">
               <div>
                 <h2 className="font-display text-xl font-semibold">All bookings</h2>
                 <p className="text-sm text-pine/55">{data.bookings.length} {data.bookings.length === 1 ? "record" : "records"} · newest first</p>
@@ -349,7 +346,7 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="mt-4 min-h-0 max-h-[30rem] flex-1 overflow-auto">
-                  <table className="w-full min-w-[680px] text-left text-sm">
+                  <table className="w-full text-left text-sm">
                     <thead className="sticky top-0 z-10 bg-[#f3fbf5]/95 text-[10px] uppercase tracking-wider text-pine/45 backdrop-blur">
                       <tr>
                         <th className="py-2 pr-3 font-semibold">Date</th>
@@ -383,14 +380,7 @@ export default function AdminDashboard() {
                             <button type="button" onClick={() => setProofPreview({ url: booking.proofUrl!, name: booking.name ?? "Customer", reference: booking.reference })} className="whitespace-nowrap text-xs font-semibold text-court underline">View receipt</button>
                             ) : <span className="text-xs text-pine/40">—</span>}
                           </td>
-                          <td className="py-3 pr-3">
-                            <StatusBadge status={booking.status} />
-                            {booking.reviewedBy && (
-                              <div className="mt-1 whitespace-nowrap text-[10px] text-pine/55" title={booking.reviewedAt ? new Date(booking.reviewedAt).toLocaleString("en-PH") : undefined}>
-                                by {booking.reviewedBy}
-                              </div>
-                            )}
-                          </td>
+                          <td className="py-3 pr-3"><StatusBadge status={booking.status} /></td>
                           <td className="whitespace-nowrap py-3 text-right font-display font-semibold">{peso(booking.amount)}</td>
                         </tr>
                       ))}

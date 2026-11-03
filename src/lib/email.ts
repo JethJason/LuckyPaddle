@@ -15,13 +15,6 @@ function parseSender(value: string | undefined): Sender | null {
   return trimmed.includes("@") ? { name: BRAND, email: trimmed } : null;
 }
 
-const escapeHtml = (value: string) => value
-  .replace(/&/g, "&amp;")
-  .replace(/</g, "&lt;")
-  .replace(/>/g, "&gt;")
-  .replace(/"/g, "&quot;")
-  .replace(/'/g, "&#39;");
-
 async function deliverEmail(to: string, subject: string, html: string, purpose: string): Promise<boolean> {
   if (process.env.BREVO_API_KEY) {
     const sender = parseSender(process.env.EMAIL_FROM);
@@ -83,79 +76,22 @@ async function deliverEmail(to: string, subject: string, html: string, purpose: 
 /** Sends the confirmation through Brevo, or Resend when only a Resend key is set. */
 export async function sendConfirmation(b: Booking): Promise<boolean> {
   if (!b.email) return false;
-  const name = escapeHtml(b.name?.trim() || "Player");
-  const court = escapeHtml(courtName(b.court));
-  const date = escapeHtml(b.date);
-  const time = escapeHtml(`${hourLabel(b.hour)} – ${hourLabel(b.hour + b.duration)}`);
-  const bookingRef = escapeHtml(b.id.slice(0, 8).toUpperCase());
-  const details = [
-    ["Court", court],
-    ["Date", date],
-    ["Time slot", time],
-    ["Amount paid", peso(b.amount)],
-    ...(typeof b.paddles === "number" && b.paddles > 0 ? [["Paddles", String(b.paddles)]] : []),
-    ...(typeof b.balls === "number" && b.balls > 0 ? [["Balls", String(b.balls)]] : []),
-  ] as const;
-  const detailRows = details.map(([label, value]) => `
-      <tr>
-        <td style="padding:11px 0;border-bottom:1px solid #e8f1eb;color:#64776c;font-size:14px">${label}</td>
-        <td align="right" style="padding:11px 0;border-bottom:1px solid #e8f1eb;color:#123d2c;font-size:14px;font-weight:700">${value}</td>
-      </tr>`).join("");
-  const tips = [
-    "Please arrive a few minutes before your scheduled time so you can get settled and start playing promptly.",
-    "Outside food and drinks are welcome; please enjoy them only in the designated lounge area.",
-    "Small personal snacks and non-alcoholic drinks have no corkage. Alcoholic drinks incur a corkage fee of ₱100 per bottle. Large food setups, food trays, mobile carts, and large items such as lechon incur a flat corkage fee of ₱1,500.",
-    "If you plan to have a party setup, please inform us in advance. We strongly recommend booking an extra hour before your slot for setup and an extra hour after for cleanup.",
-    "Food, snacks, and beverages, including alcoholic drinks, are also available for purchase at the venue.",
-    "Please help keep the facility clean for everyone by practicing Clean As You Go before your time ends.",
-    "Please take care of your personal belongings. Lucky Paddle is not liable for lost, stolen, or damaged items, or for injuries sustained while on the premises.",
-    "All bookings are non-refundable, except in cases of severe weather calamities or unforeseen court maintenance issues.",
-  ];
-  const tipRows = tips.map((tip) => `
-      <tr>
-        <td valign="top" style="width:22px;padding:0 9px 12px 0;color:#31a56a;font-size:17px;line-height:20px">•</td>
-        <td style="padding:0 0 12px;color:#425b4c;font-size:13px;line-height:20px">${tip}</td>
-      </tr>`).join("");
-
-  const html = `<!doctype html>
-  <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-  <body style="margin:0;padding:0;background:#edf5ef;font-family:Arial,Helvetica,sans-serif;color:#123d2c">
-    <div style="display:none;max-height:0;overflow:hidden;opacity:0">Your pickleball reservation is confirmed. See your booking details and visit information inside.</div>
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#edf5ef">
-      <tr><td align="center" style="padding:28px 12px">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:620px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 34px rgba(18,61,44,.12)">
-          <tr><td style="padding:24px 30px;background:#123d2c;border-bottom:5px solid #cde95c">
-            <div style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#cde95c">Lucky Paddle</div>
-            <div style="margin-top:7px;color:#ffffff;font-size:25px;font-weight:700">Reservation confirmed!</div>
-          </td></tr>
-          <tr><td style="padding:28px 30px 12px">
-            <p style="margin:0;color:#123d2c;font-size:17px;font-weight:700">Dear ${name},</p>
-            <p style="margin:12px 0 0;color:#425b4c;font-size:14px;line-height:22px">Thank you for your reservation! Your payment of <strong style="color:#123d2c">${escapeHtml(peso(b.amount))}</strong> has been received and your booking is confirmed. We look forward to hosting your game!</p>
-          </td></tr>
-          <tr><td style="padding:12px 30px 24px">
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="padding:4px 18px;background:#f4faf5;border:1px solid #e2eee5;border-radius:14px">
-              ${detailRows}
-              <tr><td style="padding:11px 0;color:#64776c;font-size:14px">Booking reference</td><td align="right" style="padding:11px 0;color:#123d2c;font-size:14px;font-weight:700">${bookingRef}</td></tr>
-            </table>
-          </td></tr>
-          <tr><td style="padding:0 30px 8px">
-            <div style="padding:15px 17px;border-radius:12px;background:#f0f8d9;color:#31552f;font-size:13px;line-height:20px"><strong>Quick reminder:</strong> Please arrive a few minutes early and enjoy outside food and drinks in the designated lounge area.</div>
-          </td></tr>
-          <tr><td style="padding:20px 30px 8px">
-            <h2 style="margin:0 0 15px;color:#123d2c;font-size:17px">Important information for your visit</h2>
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${tipRows}</table>
-          </td></tr>
-          <tr><td style="padding:18px 30px 26px;background:#f4faf5;border-top:1px solid #e2eee5">
-            <p style="margin:0;color:#425b4c;font-size:14px;line-height:21px">Need help before your reservation? Email us at <a href="mailto:luckypaddle@proton.me" style="color:#157448;font-weight:700;text-decoration:underline">luckypaddle@proton.me</a>.</p>
-            <p style="margin:16px 0 0;color:#123d2c;font-size:14px;line-height:21px">Best regards,<br><strong>Lucky Paddle</strong></p>
-          </td></tr>
-        </table>
-        <p style="margin:16px 0 0;color:#718278;font-size:11px;line-height:18px">This email confirms your reservation at ${escapeHtml(BRAND)}. Please keep it for your records.</p>
-      </td></tr>
+  const html = `<div style="font-family:system-ui;max-width:480px;margin:auto;padding:24px;background:#f1fbf4;border-radius:16px">
+    <h2 style="color:#0b3d2a;margin:0 0 8px">You're booked, ${b.name ?? "player"}!</h2>
+    <p style="color:#14532d">Your payment was verified and your booking is approved. See you on court!</p>
+    <table style="width:100%;color:#0b3d2a;font-size:15px">
+      <tr><td>Court</td><td align="right"><b>${courtName(b.court)}</b></td></tr>
+      <tr><td>Date</td><td align="right"><b>${b.date}</b></td></tr>
+      <tr><td>Time</td><td align="right"><b>${hourLabel(b.hour)} – ${hourLabel(b.hour + b.duration)}</b></td></tr>
+      <tr><td>Paid</td><td align="right"><b>${peso(b.amount)}</b></td></tr>
+      ${(b.paddles ?? 0) > 0 ? `<tr><td>Paddles</td><td align="right">${b.paddles}</td></tr>` : ""}
+      ${(b.balls ?? 0) > 0 ? `<tr><td>Balls</td><td align="right">${b.balls}</td></tr>` : ""}
+      <tr><td>Payment ref</td><td align="right">${b.reference ?? "-"}</td></tr>
+      <tr><td>Booking ref</td><td align="right">${b.id.slice(0, 8).toUpperCase()}</td></tr>
     </table>
-  </body></html>`;
+    <p style="color:#166534;font-size:13px">Please arrive 10 minutes early. Good luck on court! — ${BRAND}</p></div>`;
 
-  const subject = "Pickleball Reservation Confirmed!";
+  const subject = `Booking confirmed · ${courtName(b.court)}, ${b.date} ${hourLabel(b.hour)}`;
   return deliverEmail(b.email, subject, html, "confirmation");
 }
 

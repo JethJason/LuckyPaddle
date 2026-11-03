@@ -3,19 +3,6 @@
 
 create extension if not exists btree_gist;
 
-create table if not exists public.admin_users (
-  id uuid primary key default gen_random_uuid(),
-  username text not null unique,
-  display_name text not null,
-  password_hash text not null,
-  role text not null default 'admin' check (role in ('owner', 'admin')),
-  active boolean not null default true,
-  created_by uuid references public.admin_users(id) on delete set null,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists admin_users_active_idx on public.admin_users (active, role);
-
 create table if not exists public.bookings (
   id uuid primary key default gen_random_uuid(),
   date date not null,
@@ -34,9 +21,6 @@ create table if not exists public.bookings (
   balls int not null default 0 check (balls >= 0),
   proof_path text,
   created_by text not null default 'customer' check (created_by in ('customer', 'admin')),
-  reviewed_by uuid references public.admin_users(id) on delete set null,
-  reviewed_by_name text,
-  reviewed_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -46,9 +30,6 @@ alter table public.bookings add column if not exists paddles int not null defaul
 alter table public.bookings add column if not exists balls int not null default 0;
 alter table public.bookings add column if not exists proof_path text;
 alter table public.bookings add column if not exists created_by text not null default 'customer';
-alter table public.bookings add column if not exists reviewed_by uuid references public.admin_users(id) on delete set null;
-alter table public.bookings add column if not exists reviewed_by_name text;
-alter table public.bookings add column if not exists reviewed_at timestamptz;
 alter table public.bookings drop constraint if exists bookings_paddles_check;
 alter table public.bookings add constraint bookings_paddles_check check (paddles >= 0 and paddles <= 4);
 alter table public.bookings drop constraint if exists bookings_created_by_check;
@@ -120,7 +101,6 @@ create table if not exists public.app_settings (
 
 -- Only the server (service role key) touches these tables.
 alter table public.bookings enable row level security;
-alter table public.admin_users enable row level security;
 alter table public.blocks enable row level security;
 alter table public.inventory enable row level security;
 alter table public.app_settings enable row level security;

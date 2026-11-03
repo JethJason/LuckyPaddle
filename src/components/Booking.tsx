@@ -62,7 +62,6 @@ export default function Booking() {
   const [error, setError] = useState("");
   const [fromHour, setFromHour] = useState(OPEN_HOUR);
   const [toHour, setToHour] = useState(OPEN_HOUR + 1);
-  const [draftActive, setDraftActive] = useState(false);
   const [addPaddles, setAddPaddles] = useState(0);
   const [addBalls, setAddBalls] = useState(0);
   const [maxPaddles, setMaxPaddles] = useState(MAX_PADDLES);
@@ -110,35 +109,12 @@ export default function Booking() {
   const rateIndexForHour = (h: number) => timeRates.findIndex((r) => h >= r.start && h < r.end);
 
   function changeFrom(h: number) {
-    setDraftActive(true);
     setFromHour(h);
-    if (toHour <= h || (hold && selectionMatchesHold)) setToHour(Math.min(h + 1, CLOSE_HOUR));
+    if (toHour <= h) setToHour(Math.min(h + 1, CLOSE_HOUR));
   }
   function changeTo(h: number) {
-    setDraftActive(true);
     setToHour(h);
     if (fromHour >= h) setFromHour(Math.max(OPEN_HOUR, h - 1));
-  }
-
-  function selectCalendarHour(h: number) {
-    // A held range starts a fresh draft from the clicked hour.
-    if (!draftActive || selectionMatchesHold) {
-      setDraftActive(true);
-      setFromHour(h);
-      setToHour(Math.min(h + 1, CLOSE_HOUR));
-      return;
-    }
-
-    // Calendar clicks after the draft start choose its inclusive end hour.
-    // Clicking an earlier hour moves the start while preserving the existing end.
-    if (h < fromHour) {
-      setDraftActive(true);
-      setFromHour(h);
-      if (toHour <= h) setToHour(Math.min(h + 1, CLOSE_HOUR));
-      return;
-    }
-    setDraftActive(true);
-    setToHour(Math.min(h + 1, CLOSE_HOUR));
   }
 
   async function bookRange() {
@@ -158,7 +134,6 @@ export default function Booking() {
       return;
     }
     setHold({ id: j.id, expiresAt: j.expiresAt, date, court, hour: fromHour, duration: toHour - fromHour, amount: j.amount });
-    setDraftActive(false);
     setError("");
     load();
   }
@@ -208,7 +183,6 @@ export default function Booking() {
   const mm = String(Math.floor(left / 60)).padStart(2, "0"), ss = String(left % 60).padStart(2, "0");
   const duration = toHour - fromHour;
   const selectionMatchesHold = !!hold && hold.date === date && hold.court === court && hold.hour === fromHour && hold.duration === duration;
-  const inDraftSelection = (h: number) => draftActive && !selectionMatchesHold && h >= fromHour && h < toHour;
   const breakdown = getPriceBreakdown(fromHour, toHour, timeRates);
   const holdBreakdown = hold ? getPriceBreakdown(hold.hour, hold.hour + hold.duration, timeRates) : null;
   const extras = addPaddles * PADDLE_RENT + addBalls * BALLS_PRICE;
@@ -293,31 +267,25 @@ export default function Booking() {
           </div>
         )}
 
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-pine/65" aria-label="Calendar selection legend">
-          <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-blue-200 ring-1 ring-blue-400" /> Draft range · click a later slot to extend</span>
-          <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-emerald-500 ring-1 ring-emerald-700" /> Held for you</span>
-        </div>
-        <p className="mt-1 text-[11px] text-pine/50">Use the From and To menus to fine-tune the start and end times.</p>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {HOURS.map((h) => {
             const s = status[court]?.[h];
-            const held = inHold(h);
-            const draftSelected = inDraftSelection(h);
-            const disabled = past(h) || (!!s && !held);
+            const disabled = past(h) || (!!s && !inHold(h));
+            const sel = inHold(h);
             const hl = getHighlight(h);
-            return <button key={h} disabled={disabled} onClick={() => selectCalendarHour(h)} onDoubleClick={() => setDraftActive(false)}
-              aria-pressed={held || draftSelected}
-              className={`rounded-2xl border px-3 py-3 text-left transition
-                ${held ? "border-leaf bg-emerald-500 text-white shadow-lg ring-2 ring-emerald-700"
-                  : draftSelected ? "border-blue-300 bg-blue-100 text-blue-950 ring-2 ring-blue-400/70"
-                  : disabled ? "cursor-not-allowed border-transparent bg-white/25 text-pine/40"
-                  : `border-white/70 ${hl || "bg-white/70"} hover:-translate-y-0.5 hover:bg-white`}`}>
-              <div className="font-display font-semibold">{hourLabel(h)}</div>
-              <div className={`text-[11px] ${held ? "text-white/75" : draftSelected ? "text-blue-800/70" : "text-pine/45"}`}>to {hourLabel(h + 1)}</div>
-              <div className="text-xs">
-                {held ? "Held for you" : draftSelected ? "Selected · press Hold" : past(h) ? "Passed" : s === "booked" ? "Booked" : s === "pending" ? "Pending approval" : s === "held" ? "On hold" : peso(getRateForHour(h, timeRates))}
-              </div>
-            </button>;
+            return (
+              <button key={h} disabled={disabled} onClick={() => changeFrom(h)}
+                className={`rounded-2xl border px-3 py-3 text-left transition
+                  ${sel ? "border-ball bg-ball text-pine shadow-lg ring-2 ring-pine"
+                    : disabled ? "cursor-not-allowed border-transparent bg-white/25 text-pine/40"
+                    : `border-white/70 ${hl || "bg-white/70"} hover:-translate-y-0.5 hover:bg-white`}`}>
+                <div className="font-display font-semibold">{hourLabel(h)}</div>
+                <div className="text-[11px] text-pine/45">to {hourLabel(h + 1)}</div>
+                <div className="text-xs">
+                  {sel ? "Selected" : past(h) ? "Passed" : s === "booked" ? "Booked" : s === "pending" ? "Pending approval" : s === "held" ? "On hold" : peso(getRateForHour(h, timeRates))}
+                </div>
+              </button>
+            );
           })}
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-pine/70">

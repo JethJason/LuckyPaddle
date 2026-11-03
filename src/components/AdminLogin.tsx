@@ -5,7 +5,6 @@ import Clover from "./Clover";
 
 export default function AdminLogin({ showDevHint }: { showDevHint: boolean }) {
   const router = useRouter();
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -17,7 +16,7 @@ export default function AdminLogin({ showDevHint }: { showDevHint: boolean }) {
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ password }),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -41,29 +40,16 @@ export default function AdminLogin({ showDevHint }: { showDevHint: boolean }) {
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div>
-            <label htmlFor="username" className="text-sm font-medium text-pine/80">Username</label>
-            <input
-              id="username"
-              type="text"
-              autoComplete="username"
-              autoFocus
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your admin username"
-              className="mt-1.5 w-full rounded-xl border border-white/80 bg-white/70 px-4 py-3 text-pine placeholder:text-pine/40"
-            />
-          </div>
-          <div>
             <label htmlFor="password" className="text-sm font-medium text-pine/80">Password</label>
             <input
               id="password"
               type="password"
               autoComplete="current-password"
+              autoFocus
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="Enter admin password"
               className="mt-1.5 w-full rounded-xl border border-white/80 bg-white/70 px-4 py-3 text-pine placeholder:text-pine/40"
             />
           </div>
@@ -72,7 +58,7 @@ export default function AdminLogin({ showDevHint }: { showDevHint: boolean }) {
             disabled={busy}
             className="w-full rounded-xl bg-court py-3.5 font-display text-lg font-semibold text-white transition hover:bg-pine disabled:opacity-60"
           >
-            {busy ? "Signing in..." : "Sign in"}
+            {busy ? "Checking..." : "Enter dashboard"}
           </button>
         </form>
 
@@ -80,7 +66,7 @@ export default function AdminLogin({ showDevHint }: { showDevHint: boolean }) {
 
         {showDevHint && (
           <p className="mt-5 rounded-xl bg-ball/30 p-3 text-xs text-pine/70">
-            Local development owner: username <code className="font-semibold">owner</code>, password <code className="font-semibold">luckypaddle</code>. Set <code>ADMIN_BOOTSTRAP_USERNAME</code> and <code>ADMIN_BOOTSTRAP_PASSWORD</code> to customize the first account.
+            Dev password: <code className="font-semibold">luckypaddle</code>. Set <code>ADMIN_PASSWORD</code> in <code>.env.local</code> to change it.
           </p>
         )}
 

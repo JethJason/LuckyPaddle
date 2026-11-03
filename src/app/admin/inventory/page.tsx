@@ -4,7 +4,7 @@ import { isAdmin } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function InventoryPage() {
-  if (!(await isAdmin())) redirect("/admin/login");
+export default function InventoryPage() {
+  if (!isAdmin()) redirect("/admin/login");
   return <InventoryManager />;
 }
