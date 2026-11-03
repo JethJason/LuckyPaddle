@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdmin } from "@/lib/admin-auth";
+import { getAdminSession } from "@/lib/admin-auth";
 import { CLOSE_HOUR, COURTS, OPEN_HOUR } from "@/lib/config";
 import { databaseConfigured, listBookings, type Booking } from "@/lib/store";
 import { manilaNow } from "@/lib/time";
@@ -12,7 +12,8 @@ const isDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value);
 const ACTIVE = new Set<Booking["status"]>(["held", "awaiting_review", "approved"]);
 
 export async function GET(req: NextRequest) {
-  if (!isAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const admin = await getAdminSession();
+  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!databaseConfigured()) return NextResponse.json({ error: NOT_CONFIGURED }, { status: 503 });
 
   const now = manilaNow();
@@ -68,6 +69,7 @@ export async function GET(req: NextRequest) {
       date,
       today: now.date,
       court: COURTS[0]?.name ?? "Court",
+      admin: { id: admin.id, displayName: admin.displayName, role: admin.role },
       stats,
       schedule,
       bookings,
