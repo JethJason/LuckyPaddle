@@ -526,7 +526,7 @@ export default function AdminDashboard() {
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <button type="button" disabled={busyId === cancellationChoice.id} onClick={() => void resolveCancellation("cancel")}
                 className="rounded-xl bg-court px-4 py-3 text-sm font-semibold text-white transition hover:bg-pine disabled:opacity-60">
-                {busyId === cancellationChoice.id ? "Processing…" : "Mark cancelled (keep record)"}
+                {busyId === cancellationChoice.id ? "Processing…" : "Mark as cancelled"}
               </button>
               <button type="button" disabled={busyId === cancellationChoice.id} onClick={() => void resolveCancellation("delete")}
                 className="rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-800 disabled:opacity-60">
@@ -537,7 +537,7 @@ export default function AdminDashboard() {
               Keep reservation
             </button>
             <p className="mt-3 text-[11px] leading-relaxed text-pine/50">
-              Permanent deletion removes the booking and its approval/cancellation history from the database. Choose “Mark cancelled” if you need to retain an audit record.
+              “Mark as cancelled” retains the booking and records the cancellation. “Delete permanently” removes the booking and its history from the database.
             </p>
           </section>
         </div>

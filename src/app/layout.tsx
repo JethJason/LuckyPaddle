@@ -7,7 +7,7 @@ const body = DM_Sans({ subsets: ["latin"], variable: "--font-body" });
 
 export const metadata: Metadata = {
   title: "Lucky Paddle — Book a court",
-  description: "Four-leaf luck on every court. Pick a time, pay with GCash, Maya or card, and get your confirmation by email.",
+  description: "Four-leaf luck on every court. Pick a time, pay with GCash, and get your confirmation by email.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -396,7 +396,7 @@ export default function Booking() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={QR_IMAGE} alt="Payment QR code" className="mx-auto h-44 w-44 object-contain" />
               <div className="mt-2 text-sm">
-                Scan with GCash or Maya and pay exactly <b>{peso(total)}</b>
+                Scan with GCash and pay exactly <b>{peso(total)}</b>
               </div>
             </div>
 

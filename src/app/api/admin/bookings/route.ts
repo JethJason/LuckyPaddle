@@ -63,6 +63,19 @@ export async function POST(req: NextRequest) {
       : await sendRejection(booking);
     return NextResponse.json({ ok: true, booking, emailed });
   } catch (error) {
+    if (action === "cancel" && typeof error === "object" && error !== null && "code" in error) {
+      const databaseError = error as { code?: string; message?: string };
+      if (
+        databaseError.code === "42703" ||
+        databaseError.code === "PGRST204" ||
+        (databaseError.code === "23514" && databaseError.message?.includes("status"))
+      ) {
+        return NextResponse.json(
+          { error: "Cancellation isn't enabled in the database yet. Run the latest supabase/schema.sql in Supabase → SQL Editor, then try again." },
+          { status: 503 },
+        );
+      }
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not review the booking." },
       { status: 500 },

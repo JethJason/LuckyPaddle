@@ -9,7 +9,7 @@ see who approved or rejected each booking.
 - 10-minute slot holds with a live countdown (double-booking is blocked by the database)
 - Multi-hour bookings with time-based rates (default: 8 AM-noon ₱350, noon-5 PM ₱500, 5 PM-1 AM ₱600); bookings of 3+ hours receive ₱50 off each eligible hour after noon (the morning rate is excluded)
 - Paddle and ball add-ons, limited by the inventory you set in admin
-- QR payment (GCash/Maya) with a payment reference number
+- GCash QR payment with a payment reference number
 - Admin approval queue; the confirmation email is sent **only when an admin approves**
 - Admins can either mark an approved customer booking as cancelled (retaining its audit record) or permanently delete it; both release the slot and email the customer. Refunds are not automatic and follow the stated non-refundable policy.
 - Separate owner/admin accounts, scrypt password hashes, immediate account deactivation, and reviewer audit history
@@ -55,13 +55,12 @@ service role key can read or write them.
 
 ## QR payment
 
-Replace `public/qr.svg` with your own GCash/Maya/bank QR image. The path is set by `QR_IMAGE` in
-`src/lib/config.ts`.
+The GCash QR image is `public/gcash-qr.png`; its path is set by `QR_IMAGE` in `src/lib/config.ts`.
 
 Flow:
 
 1. Player picks a date and time range. The slot is held for 10 minutes.
-2. Player scans the QR, pays, and enters name, email, phone and the payment reference number.
+2. Player scans the GCash QR, pays, and enters name, email, phone and the payment reference number.
 3. The booking moves to `awaiting_review` and stays reserved.
 4. Admin opens `/admin`, checks the reference, and clicks **Approve & email** or **Reject**.
    Approving sends the confirmation email; rejecting frees the slot.
