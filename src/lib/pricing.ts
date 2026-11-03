@@ -1,5 +1,6 @@
 import {
   MULTI_HOUR_DISCOUNT,
+  MULTI_HOUR_DISCOUNT_START_HOUR,
   MULTI_HOUR_MIN,
   PRICE_PER_HOUR,
 } from "./config";
@@ -22,14 +23,18 @@ export function getRateForHour(hour: number, rates: TimeRate[]): number {
 
 export function getPriceBreakdown(fromHour: number, toHour: number, rates: TimeRate[]): PriceBreakdown {
   const hours = Math.max(0, toHour - fromHour);
-  const discountPerHour = hours >= MULTI_HOUR_MIN ? MULTI_HOUR_DISCOUNT : 0;
+  const discountEligible = hours >= MULTI_HOUR_MIN;
+  const discountPerHour = discountEligible ? MULTI_HOUR_DISCOUNT : 0;
   let base = 0;
   let total = 0;
 
   for (let h = fromHour; h < toHour; h++) {
     const price = getRateForHour(h, rates);
+    const hourDiscount = discountEligible && h >= MULTI_HOUR_DISCOUNT_START_HOUR
+      ? MULTI_HOUR_DISCOUNT
+      : 0;
     base += price;
-    total += Math.max(0, price - discountPerHour);
+    total += Math.max(0, price - hourDiscount);
   }
 
   return { hours, base, discount: base - total, discountPerHour, total };

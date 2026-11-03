@@ -4,7 +4,7 @@ export const COURTS = [{ id: 1, name: "Private Court" }];
 export const courtName = (id: number) => COURTS.find((c) => c.id === id)?.name ?? `Court ${id}`;
 export const OPEN_HOUR = 8; // 8:00 AM
 export const CLOSE_HOUR = 25; // 1:00 AM next day (last booking can go to 1:00 AM)
-export const PRICE_PER_HOUR = 500; // PHP
+export const PRICE_PER_HOUR = 350; // PHP; fallback and lowest current rate
 export const HOLD_MINUTES = 10;
 export const PADDLE_RENT = 100; // PHP per paddle
 export const BALLS_PRICE = 100; // PHP per ball
@@ -12,6 +12,8 @@ export const BALLS_PRICE = 100; // PHP per ball
 /** Multi-hour discount: book at least this many hours and save per hour. */
 export const MULTI_HOUR_MIN = 3;
 export const MULTI_HOUR_DISCOUNT = 50; // PHP off each hour
+/** The morning promotional rate (8 AM-noon) is not eligible for the multi-hour discount. */
+export const MULTI_HOUR_DISCOUNT_START_HOUR = 12;
 
 /** Maximum paddles one booking can rent. */
 export const MAX_PADDLES = 4;
@@ -42,11 +44,11 @@ export const IMAGES = {
   court: "/court.svg",
 };
 
-/** Update these with your exact court address and Google Maps search text. */
+/** Venue address and search text are kept explicit so Maps resolves the Cebu location. */
 export const LOCATION = {
-  name: "Lucky Paddle Court",
-  address: process.env.NEXT_PUBLIC_LOCATION_ADDRESS || "Location details coming soon.",
-  query: process.env.NEXT_PUBLIC_LOCATION_QUERY || "Lucky Paddle pickleball court",
+  name: "Lucky Paddle",
+  address: "Cogon Drive, Pardo, Cebu City",
+  query: "Lucky Paddle, Cogon Drive, Pardo, Cebu City, Cebu, Philippines",
 };
 export const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(LOCATION.query)}`;
 export const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(LOCATION.query)}&output=embed`;
