@@ -68,6 +68,7 @@ export default function Booking() {
   const [maxPaddles, setMaxPaddles] = useState(MAX_PADDLES);
   const [maxBalls, setMaxBalls] = useState(10);
   const [proof, setProof] = useState<File | null>(null);
+  const [qrOpen, setQrOpen] = useState(false);
 
   const load = useCallback(async () => {
     const r = await fetch(`/api/availability?date=${date}`, { cache: "no-store" });
@@ -100,6 +101,15 @@ export default function Booking() {
     const free = () => hold && navigator.sendBeacon(`/api/hold?id=${hold.id}&_method=DELETE`);
     window.addEventListener("pagehide", free); return () => window.removeEventListener("pagehide", free);
   }, [hold]);
+
+  useEffect(() => {
+    if (!qrOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setQrOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [qrOpen]);
 
   useEffect(() => { setProof(null); }, [hold]);
   useEffect(() => { setAddPaddles((n) => Math.min(n, maxPaddles)); }, [maxPaddles]);
@@ -393,8 +403,12 @@ export default function Booking() {
             </div>
 
             <div className="rounded-2xl bg-white p-4 text-center text-pine">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={QR_IMAGE} alt="Payment QR code" className="mx-auto h-44 w-44 object-contain" />
+              <button type="button" onClick={() => setQrOpen(true)} aria-label="Enlarge GCash payment QR code"
+                className="group mx-auto block cursor-zoom-in rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-court">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={QR_IMAGE} alt="GCash payment QR code. Tap to enlarge." className="mx-auto h-44 w-44 origin-center object-contain transition-transform duration-200 group-hover:scale-105 group-active:scale-100 sm:h-48 sm:w-48" />
+                <span className="mt-1 block text-xs text-pine/55">Tap or click to enlarge</span>
+              </button>
             </div>
 
             {(["name", "email", "phone", "reference"] as const).map((k) => (
@@ -424,6 +438,31 @@ export default function Booking() {
         )}
         {error && <p role="alert" className="mt-4 rounded-xl bg-red-500/20 p-3 text-sm text-red-100">{error}</p>}
       </aside>
+
+      {qrOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6"
+          onMouseDown={(event) => { if (event.target === event.currentTarget) setQrOpen(false); }}
+        >
+          <section role="dialog" aria-modal="true" aria-labelledby="gcash-qr-title"
+            className="relative flex max-h-[96dvh] w-full max-w-2xl flex-col items-center overflow-hidden rounded-3xl bg-white p-3 shadow-2xl sm:p-5">
+            <header className="flex w-full items-center justify-between gap-3 px-1 pb-2 sm:px-2">
+              <div>
+                <h2 id="gcash-qr-title" className="font-display text-lg font-semibold text-pine">GCash payment QR</h2>
+                <p className="text-xs text-pine/55">Pinch to zoom on mobile, or use your browser zoom.</p>
+              </div>
+              <button type="button" autoFocus onClick={() => setQrOpen(false)} aria-label="Close enlarged QR code"
+                className="shrink-0 rounded-full bg-pine/10 px-3 py-2 text-sm font-semibold text-pine hover:bg-pine/20">
+                Close <span aria-hidden="true">×</span>
+              </button>
+            </header>
+            <div className="flex min-h-0 w-full flex-1 items-center justify-center overflow-auto overscroll-contain rounded-2xl bg-white p-1 sm:p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={QR_IMAGE} alt="Enlarged GCash payment QR code" className="h-auto max-h-[calc(96dvh-7rem)] w-auto max-w-full select-none object-contain sm:max-h-[calc(96dvh-8rem)]" />
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
