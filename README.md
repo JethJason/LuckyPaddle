@@ -1,8 +1,8 @@
 # Lucky Paddle - court booking (Next.js 14, TypeScript, Tailwind, Supabase)
 
 One private court. Four-leaf luck. Players pick a slot, pay by QR, and get a confirmation email
-once an admin approves the payment. The owner gets a dashboard for bookings, blocks, rates and
-inventory.
+once an admin approves the payment. Named admin accounts let the owner manage staff access and
+see who approved or rejected each booking.
 
 ## Features
 
@@ -11,6 +11,7 @@ inventory.
 - Paddle and ball add-ons, limited by the inventory you set in admin
 - QR payment (GCash/Maya) with a payment reference number
 - Admin approval queue; the confirmation email is sent **only when an admin approves**
+- Separate owner/admin accounts, scrypt password hashes, immediate account deactivation, and reviewer audit history
 - Admin dashboard: revenue, pending approvals, today's occupancy, schedule, all bookings
 - Admin-created reservations that immediately block customer bookings
 - Block time for maintenance/private events
@@ -33,13 +34,15 @@ With no `BREVO_API_KEY` or `RESEND_API_KEY`, confirmation emails are logged to t
 
 1. Create a project at [supabase.com](https://supabase.com) (free plan).
 2. Open **SQL Editor**, paste the contents of `supabase/schema.sql`, and click **Run**.
-   This creates `bookings`, `blocks`, `inventory` and `app_settings`, plus the overlap
-   constraints that prevent double booking.
-   Re-run this script on existing installations to add receipt storage and admin-reservation fields.
+   This creates `admin_users`, `bookings`, `blocks`, `inventory` and `app_settings`, plus the overlap
+   constraints that prevent double booking. Re-run it on existing installations to add missing
+   booking audit fields and admin-user support.
 3. Open **Project Settings > API** and copy:
    - **Project URL** into `NEXT_PUBLIC_SUPABASE_URL`
    - **service_role** key into `SUPABASE_SERVICE_ROLE_KEY` (keep it secret, server-side only)
-4. Set `ADMIN_PASSWORD` and a long random `ADMIN_SESSION_SECRET`.
+4. Set `ADMIN_BOOTSTRAP_USERNAME`, a unique `ADMIN_BOOTSTRAP_PASSWORD` (at least 12 characters),
+   and a long random `ADMIN_SESSION_SECRET`. The first successful login creates the owner account
+   if `admin_users` is empty. The bootstrap password is not used after that account exists.
 5. Set `NEXT_PUBLIC_APP_URL` to your URL (use `http://localhost:3000` locally).
 
 The tables have Row Level Security enabled and no public policies, so only the server with the
@@ -60,10 +63,15 @@ Flow:
 
 ## Admin
 
-Open `http://localhost:3000/admin`. In development the default password is `luckypaddle`; set
-`ADMIN_PASSWORD` before deploying. The dashboard refreshes every 15 seconds.
+Open `http://localhost:3000/admin` and sign in with your username and password. In local development,
+the initial account defaults to `owner` / `luckypaddle` unless bootstrap variables are configured.
+Before deploying, configure a strong unique bootstrap password and run the latest schema. Once signed
+in as the owner, add individual staff accounts at `/admin/users`; admins cannot manage other users.
+Deactivating an account revokes its access immediately. The dashboard records the reviewer name and
+timestamp on each approved or rejected booking. Sign-in attempts are throttled per username and IP.
 
 - `/admin` - approvals, stats, schedule, all bookings
+- `/admin/users` - add or deactivate individual admin accounts (owner only)
 - `/admin/reserve` - create or cancel admin reservations
 - `/admin/block` - block time
 - `/admin/rate` - time-based rates and tiers
