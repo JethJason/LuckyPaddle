@@ -29,8 +29,8 @@ export const MAX_DURATION = 18;
 export const PROOF_BUCKET = "payment-proofs";
 export const MAX_PROOF_BYTES = 4 * 1024 * 1024;
 
-/** Your payment QR (GCash/Maya/bank). Replace public/qr.svg, or point this at another file in /public. */
-export const QR_IMAGE = "/qr.svg";
+/** GCash payment QR supplied by the venue. */
+export const QR_IMAGE = "/gcash-qr.png";
 
 /**
  * Photos. The hero is a verified free Unsplash photo (Aleksander Saks, Unsplash License).
