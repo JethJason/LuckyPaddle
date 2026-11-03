@@ -3,7 +3,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Clover from "./Clover";
 
-export default function AdminLogin({ showDevHint }: { showDevHint: boolean }) {
+export default function AdminLogin({ showDevHint, passwordChanged = false }: { showDevHint: boolean; passwordChanged?: boolean }) {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -38,6 +38,7 @@ export default function AdminLogin({ showDevHint }: { showDevHint: boolean }) {
         </div>
         <h1 className="mt-7 font-display text-3xl font-bold">Admin access</h1>
         <p className="mt-2 text-sm text-pine/65">Sign in to see bookings and court data.</p>
+        {passwordChanged && <p role="status" className="mt-4 rounded-xl bg-leaf/15 p-3 text-sm text-court">Password updated. Sign in with your new password.</p>}
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div>

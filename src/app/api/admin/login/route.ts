@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       role: user.role as "owner" | "admin",
     };
     const res = NextResponse.json({ ok: true, admin: { displayName: identity.displayName, role: identity.role } });
-    res.cookies.set(ADMIN_COOKIE, createSessionValue(identity), {
+    res.cookies.set(ADMIN_COOKIE, createSessionValue(identity, user.session_version ?? 0), {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",

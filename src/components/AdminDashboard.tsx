@@ -160,9 +160,9 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2 sm:gap-3">
           <a href="/admin/inventory" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Inventory</a>
           <a href="/admin/reserve" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Reserve</a>
-          <a href="/admin/block" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Block time</a>
           <a href="/admin/rate" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Court rates</a>
           {data?.admin.role === "owner" && <a href="/admin/users" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Users</a>}
+          <a href="/admin/settings" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Settings</a>
           {data?.admin && <span className="hidden text-xs font-medium text-pine/55 xl:inline">Signed in as {data.admin.displayName}</span>}
           <a href="/" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">View site</a>
           <button onClick={signOut} className="rounded-full bg-pine px-4 py-2 text-sm font-medium text-white transition hover:bg-court">
