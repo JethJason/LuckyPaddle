@@ -176,3 +176,29 @@ export async function sendRejection(b: Booking): Promise<boolean> {
   const subject = `Booking request update · ${courtName(b.court)}, ${b.date} ${hourLabel(b.hour)}`;
   return deliverEmail(b.email, subject, html, "rejection notice");
 }
+
+/** Confirms cancellation of a previously approved booking and release of its time slot. */
+export async function sendCancellation(b: Booking): Promise<boolean> {
+  if (!b.email) return false;
+  const name = escapeHtml(b.name?.trim() || "there");
+  const reason = b.cancellationReason?.trim();
+  const reasonLine = reason
+    ? `<tr><td style="padding:11px 0;color:#64776c;font-size:14px">Reason</td><td align="right" style="padding:11px 0;color:#123d2c;font-size:14px;font-weight:700">${escapeHtml(reason)}</td></tr>`
+    : "";
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:24px auto;padding:28px;background:#f4faf5;border:1px solid #e2eee5;border-radius:18px;color:#123d2c">
+    <div style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#157448">${escapeHtml(BRAND)}</div>
+    <h2 style="margin:8px 0 12px;color:#123d2c">Reservation cancelled</h2>
+    <p style="color:#425b4c;line-height:1.6">Hi ${name}, your approved reservation has been cancelled as requested. The time slot has been released and is available for others to book.</p>
+    <table style="width:100%;margin:18px 0;padding:8px 16px;background:#fff;border:1px solid #e2eee5;border-radius:12px;color:#123d2c;font-size:14px">
+      <tr><td style="padding:11px 0;color:#64776c">Court</td><td align="right"><b>${escapeHtml(courtName(b.court))}</b></td></tr>
+      <tr><td style="padding:11px 0;color:#64776c">Date</td><td align="right"><b>${escapeHtml(b.date)}</b></td></tr>
+      <tr><td style="padding:11px 0;color:#64776c">Time</td><td align="right"><b>${escapeHtml(`${hourLabel(b.hour)} – ${hourLabel(b.hour + b.duration)}`)}</b></td></tr>
+      ${reasonLine}
+      <tr><td style="padding:11px 0;color:#64776c">Booking reference</td><td align="right"><b>${escapeHtml(b.id.slice(0, 8).toUpperCase())}</b></td></tr>
+    </table>
+    <p style="padding:14px 16px;background:#fff7e6;border-radius:10px;color:#6b542d;font-size:13px;line-height:1.6"><b>Refund policy:</b> Bookings are non-refundable except in cases of severe weather calamities or unforeseen court maintenance issues. This cancellation does not automatically issue a refund. Please contact us if you believe an exception applies.</p>
+    <p style="margin-top:20px;color:#425b4c;font-size:14px;line-height:1.6">Questions? Email <a href="mailto:luckypaddle@proton.me" style="color:#157448">luckypaddle@proton.me</a>.<br><br>Best regards,<br><b>${escapeHtml(BRAND)}</b></p>
+  </div>`;
+  const subject = `Reservation cancelled · ${courtName(b.court)}, ${b.date} ${hourLabel(b.hour)}`;
+  return deliverEmail(b.email, subject, html, "cancellation notice");
+}

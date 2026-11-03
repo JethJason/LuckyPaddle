@@ -34,6 +34,7 @@ const STATUS_STYLES: Record<Status, string> = {
   awaiting_review: "bg-amber-400/20 text-amber-800",
   approved: "bg-leaf/15 text-court",
   rejected: "bg-red-500/10 text-red-700",
+  cancelled: "bg-slate-500/10 text-slate-700",
 };
 
 const STATUS_LABELS: Record<Status, string> = {
@@ -41,6 +42,7 @@ const STATUS_LABELS: Record<Status, string> = {
   awaiting_review: "Awaiting approval",
   approved: "Approved",
   rejected: "Rejected",
+  cancelled: "Cancelled",
 };
 
 const prettyDate = (value: string) =>
@@ -131,6 +133,33 @@ export default function AdminDashboard() {
       await load(date);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not review the booking.");
+    } finally {
+      setBusyId("");
+    }
+  }
+
+  async function cancelBooking(booking: Booking) {
+    const reason = window.prompt("Optional cancellation reason to include in the customer email:", "Customer requested cancellation");
+    if (reason === null) return;
+    if (!window.confirm("Cancel this approved reservation and release its time slot? This does not automatically issue a refund.")) return;
+
+    setBusyId(booking.id);
+    setError("");
+    setNotice("");
+    try {
+      const res = await fetch("/api/admin/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: booking.id, action: "cancel", reason }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Could not cancel the reservation.");
+      setNotice(json.emailed
+        ? "Reservation cancelled, the slot is open again, and the customer was emailed. No refund was issued automatically."
+        : "Reservation cancelled and the slot is open again, but the customer email was not sent. No refund was issued automatically.");
+      await load(date);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not cancel the reservation.");
     } finally {
       setBusyId("");
     }
@@ -389,6 +418,18 @@ export default function AdminDashboard() {
                               <div className="mt-1 whitespace-nowrap text-[10px] text-pine/55" title={booking.reviewedAt ? new Date(booking.reviewedAt).toLocaleString("en-PH") : undefined}>
                                 by {booking.reviewedBy}
                               </div>
+                            )}
+                            {booking.status === "cancelled" && booking.cancelledBy && (
+                              <div className="mt-1 whitespace-nowrap text-[10px] text-pine/55" title={booking.cancelledAt ? new Date(booking.cancelledAt).toLocaleString("en-PH") : undefined}>
+                                cancelled by {booking.cancelledBy}
+                                {booking.cancellationReason ? ` · ${booking.cancellationReason}` : ""}
+                              </div>
+                            )}
+                            {booking.status === "approved" && booking.createdBy !== "admin" && (
+                              <button type="button" onClick={() => void cancelBooking(booking)} disabled={busyId === booking.id}
+                                className="mt-1 block whitespace-nowrap text-[10px] font-semibold text-red-700 underline decoration-red-300 underline-offset-2 disabled:opacity-50">
+                                {busyId === booking.id ? "Cancelling…" : "Cancel booking"}
+                              </button>
                             )}
                           </td>
                           <td className="whitespace-nowrap py-3 text-right font-display font-semibold">{peso(booking.amount)}</td>

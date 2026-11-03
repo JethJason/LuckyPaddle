@@ -18,6 +18,10 @@ const COPY: Record<Status, { title: string; text: string }> = {
     title: "Booking not approved",
     text: "We couldn't verify that payment. Please book again or contact us with your payment reference number.",
   },
+  cancelled: {
+    title: "Reservation cancelled",
+    text: "This approved reservation was cancelled and its time slot has been released. Contact Lucky Paddle if you have questions about the cancellation or refund policy.",
+  },
   held: {
     title: "Booking submitted",
     text: "Your booking is being submitted. Please wait a moment and check your email for the confirmation.",

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { sendConfirmation, sendRejection } from "@/lib/email";
-import { databaseConfigured, listBookings, review } from "@/lib/store";
+import { sendCancellation, sendConfirmation, sendRejection } from "@/lib/email";
+import { cancelApprovedBooking, databaseConfigured, listBookings, review } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -26,11 +26,23 @@ export async function POST(req: NextRequest) {
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!databaseConfigured()) return NextResponse.json({ error: NOT_CONFIGURED }, { status: 503 });
 
-  const { id, action } = await req.json().catch(() => ({}));
-  if (!id || (action !== "approve" && action !== "reject"))
+  const { id, action, reason } = await req.json().catch(() => ({}));
+  if (!id || (action !== "approve" && action !== "reject" && action !== "cancel"))
     return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
 
   try {
+    if (action === "cancel") {
+      const booking = await cancelApprovedBooking(id, {
+        adminId: admin.id,
+        adminName: admin.displayName,
+        reason: typeof reason === "string" ? reason : undefined,
+      });
+      if (!booking)
+        return NextResponse.json({ error: "Only an approved customer reservation can be cancelled." }, { status: 409 });
+      const emailed = await sendCancellation(booking);
+      return NextResponse.json({ ok: true, booking, emailed });
+    }
+
     const booking = await review(id, action === "approve" ? "approved" : "rejected", {
       id: admin.id,
       displayName: admin.displayName,
