@@ -34,6 +34,7 @@ const STATUS_STYLES: Record<Status, string> = {
   awaiting_review: "bg-amber-400/20 text-amber-800",
   approved: "bg-leaf/15 text-court",
   rejected: "bg-red-500/10 text-red-700",
+  cancelled: "bg-slate-500/10 text-slate-700",
 };
 
 const STATUS_LABELS: Record<Status, string> = {
@@ -41,6 +42,7 @@ const STATUS_LABELS: Record<Status, string> = {
   awaiting_review: "Awaiting approval",
   approved: "Approved",
   rejected: "Rejected",
+  cancelled: "Cancelled",
 };
 
 const prettyDate = (value: string) =>
@@ -66,6 +68,8 @@ export default function AdminDashboard() {
   const [busyId, setBusyId] = useState("");
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [proofPreview, setProofPreview] = useState<{ url: string; name: string; reference?: string } | null>(null);
+  const [cancellationChoice, setCancellationChoice] = useState<Booking | null>(null);
+  const [cancellationReason, setCancellationReason] = useState("Customer requested cancellation");
 
   const load = useCallback(async (selected: string) => {
     try {
@@ -131,6 +135,36 @@ export default function AdminDashboard() {
       await load(date);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not review the booking.");
+    } finally {
+      setBusyId("");
+    }
+  }
+
+  async function resolveCancellation(action: "cancel" | "delete") {
+    if (!cancellationChoice) return;
+    const booking = cancellationChoice;
+    setBusyId(booking.id);
+    setError("");
+    setNotice("");
+    try {
+      const res = await fetch("/api/admin/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: booking.id, action, reason: cancellationReason }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Could not cancel the reservation.");
+      const outcome = action === "delete"
+        ? "Reservation permanently deleted from the database and its slot released."
+        : "Reservation marked as cancelled and its slot released.";
+      setNotice(json.emailed
+        ? `${outcome} The customer was emailed. No refund was issued automatically.`
+        : `${outcome} The customer email was not sent. No refund was issued automatically.`);
+      setCancellationChoice(null);
+      setCancellationReason("Customer requested cancellation");
+      await load(date);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not cancel the reservation.");
     } finally {
       setBusyId("");
     }
@@ -390,6 +424,18 @@ export default function AdminDashboard() {
                                 by {booking.reviewedBy}
                               </div>
                             )}
+                            {booking.status === "cancelled" && booking.cancelledBy && (
+                              <div className="mt-1 whitespace-nowrap text-[10px] text-pine/55" title={booking.cancelledAt ? new Date(booking.cancelledAt).toLocaleString("en-PH") : undefined}>
+                                cancelled by {booking.cancelledBy}
+                                {booking.cancellationReason ? ` · ${booking.cancellationReason}` : ""}
+                              </div>
+                            )}
+                            {booking.status === "approved" && booking.createdBy !== "admin" && (
+                              <button type="button" onClick={() => { setCancellationChoice(booking); setCancellationReason("Customer requested cancellation"); }} disabled={busyId === booking.id}
+                                className="mt-1 block whitespace-nowrap text-[10px] font-semibold text-red-700 underline decoration-red-300 underline-offset-2 disabled:opacity-50">
+                                Manage cancellation
+                              </button>
+                            )}
                           </td>
                           <td className="whitespace-nowrap py-3 text-right font-display font-semibold">{peso(booking.amount)}</td>
                         </tr>
@@ -405,6 +451,45 @@ export default function AdminDashboard() {
             {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", second: "2-digit" })} · Refreshes every 15 seconds` : "Loading..."}
           </p>
         </>
+      )}
+
+      {cancellationChoice && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-pine/75 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => { if (event.target === event.currentTarget && !busyId) setCancellationChoice(null); }}
+        >
+          <section role="dialog" aria-modal="true" aria-labelledby="cancel-booking-title"
+            className="w-full max-w-lg rounded-3xl border border-white/70 bg-[#f3fbf5] p-5 shadow-2xl sm:p-7">
+            <h2 id="cancel-booking-title" className="font-display text-2xl font-bold">Cancel approved reservation?</h2>
+            <p className="mt-2 text-sm leading-relaxed text-pine/70">
+              {cancellationChoice.name ?? "Customer"} · {prettyDate(cancellationChoice.date)} · {hourLabel(cancellationChoice.hour)}–{hourLabel(cancellationChoice.hour + cancellationChoice.duration)}
+            </p>
+            <p className="mt-3 rounded-xl bg-amber-400/15 p-3 text-xs leading-relaxed text-amber-950">
+              Either option releases the slot and sends the customer a cancellation email. No refund is issued automatically; the existing non-refundable policy still applies.
+            </p>
+            <label className="mt-4 block text-sm font-medium text-pine/75">
+              Optional reason for the customer email
+              <textarea value={cancellationReason} maxLength={500} onChange={(event) => setCancellationReason(event.target.value)}
+                className="mt-1.5 min-h-20 w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm text-pine" />
+            </label>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <button type="button" disabled={busyId === cancellationChoice.id} onClick={() => void resolveCancellation("cancel")}
+                className="rounded-xl bg-court px-4 py-3 text-sm font-semibold text-white transition hover:bg-pine disabled:opacity-60">
+                {busyId === cancellationChoice.id ? "Processing…" : "Mark cancelled (keep record)"}
+              </button>
+              <button type="button" disabled={busyId === cancellationChoice.id} onClick={() => void resolveCancellation("delete")}
+                className="rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-800 disabled:opacity-60">
+                {busyId === cancellationChoice.id ? "Processing…" : "Delete permanently"}
+              </button>
+            </div>
+            <button type="button" disabled={!!busyId} onClick={() => setCancellationChoice(null)} className="mt-3 w-full rounded-xl bg-pine/10 px-4 py-2.5 text-sm font-semibold text-pine/75 hover:bg-pine/15 disabled:opacity-50">
+              Keep reservation
+            </button>
+            <p className="mt-3 text-[11px] leading-relaxed text-pine/50">
+              Permanent deletion removes the booking and its approval/cancellation history from the database. Choose “Mark cancelled” if you need to retain an audit record.
+            </p>
+          </section>
+        </div>
       )}
 
       {proofPreview && (

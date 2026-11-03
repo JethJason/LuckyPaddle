@@ -28,7 +28,7 @@ create table if not exists public.bookings (
   duration int not null default 1 check (duration >= 1),
   amount int not null,
   status text not null default 'held'
-    check (status in ('held', 'awaiting_review', 'approved', 'rejected')),
+    check (status in ('held', 'awaiting_review', 'approved', 'rejected', 'cancelled')),
   expires_at timestamptz,
   name text,
   email text,
@@ -41,6 +41,10 @@ create table if not exists public.bookings (
   reviewed_by uuid references public.admin_users(id) on delete set null,
   reviewed_by_name text,
   reviewed_at timestamptz,
+  cancelled_by uuid references public.admin_users(id) on delete set null,
+  cancelled_by_name text,
+  cancelled_at timestamptz,
+  cancellation_reason text,
   created_at timestamptz not null default now()
 );
 
@@ -53,6 +57,10 @@ alter table public.bookings add column if not exists created_by text not null de
 alter table public.bookings add column if not exists reviewed_by uuid references public.admin_users(id) on delete set null;
 alter table public.bookings add column if not exists reviewed_by_name text;
 alter table public.bookings add column if not exists reviewed_at timestamptz;
+alter table public.bookings add column if not exists cancelled_by uuid references public.admin_users(id) on delete set null;
+alter table public.bookings add column if not exists cancelled_by_name text;
+alter table public.bookings add column if not exists cancelled_at timestamptz;
+alter table public.bookings add column if not exists cancellation_reason text;
 alter table public.bookings drop constraint if exists bookings_paddles_check;
 alter table public.bookings add constraint bookings_paddles_check check (paddles >= 0 and paddles <= 4);
 alter table public.bookings drop constraint if exists bookings_created_by_check;
@@ -65,7 +73,7 @@ alter table public.bookings drop constraint if exists bookings_status_check;
 update public.bookings set status = 'approved' where status = 'paid';
 update public.bookings set status = 'rejected' where status = 'expired';
 alter table public.bookings add constraint bookings_status_check
-  check (status in ('held', 'awaiting_review', 'approved', 'rejected'));
+  check (status in ('held', 'awaiting_review', 'approved', 'rejected', 'cancelled'));
 
 -- The database itself prevents overlapping active bookings.
 alter table public.bookings drop constraint if exists bookings_no_overlap;

@@ -11,6 +11,7 @@ see who approved or rejected each booking.
 - Paddle and ball add-ons, limited by the inventory you set in admin
 - QR payment (GCash/Maya) with a payment reference number
 - Admin approval queue; the confirmation email is sent **only when an admin approves**
+- Admins can either mark an approved customer booking as cancelled (retaining its audit record) or permanently delete it; both release the slot and email the customer. Refunds are not automatic and follow the stated non-refundable policy.
 - Separate owner/admin accounts, scrypt password hashes, immediate account deactivation, and reviewer audit history
 - Self-service username and password changes in admin settings; password changes revoke existing sessions
 - Admin dashboard: revenue, pending approvals, today's occupancy, schedule, all bookings
@@ -37,7 +38,7 @@ With no `BREVO_API_KEY` or `RESEND_API_KEY`, confirmation emails are logged to t
 2. Open **SQL Editor**, paste the contents of `supabase/schema.sql`, and click **Run**.
    This creates `admin_users`, `bookings`, `blocks`, `inventory` and `app_settings`, plus the overlap
    constraints that prevent double booking. Re-run it on existing installations to add missing
-   booking audit fields and admin-user support.
+   booking audit and cancellation fields and admin-user support.
    Admin login remains compatible with installations that have not yet added
    `admin_users.session_version`; run the latest schema before using password changes and
    cross-device session revocation.

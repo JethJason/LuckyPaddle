@@ -2,7 +2,7 @@ import { BOOKING_START_DATE, CLOSE_HOUR, COURTS, HOLD_MINUTES, OPEN_HOUR, PROOF_
 import { getPriceForRange } from "./pricing";
 import { supabase } from "./supabase";
 
-export type Status = "held" | "awaiting_review" | "approved" | "rejected";
+export type Status = "held" | "awaiting_review" | "approved" | "rejected" | "cancelled";
 export type RateTier = { maxHours: number; price: number };
 export type TimeRate = { start: number; end: number; price: number };
 export type Inventory = { paddles: number; balls: number };
@@ -39,6 +39,10 @@ export interface Booking {
   reviewedBy?: string;
   reviewedAt?: number;
   reviewedById?: string;
+  cancelledBy?: string;
+  cancelledById?: string;
+  cancelledAt?: number;
+  cancellationReason?: string;
 }
 
 export const DEFAULT_TIME_RATES: TimeRate[] = [
@@ -72,6 +76,10 @@ type BookingRow = {
   reviewed_by: string | null;
   reviewed_by_name: string | null;
   reviewed_at: string | null;
+  cancelled_by: string | null;
+  cancelled_by_name: string | null;
+  cancelled_at: string | null;
+  cancellation_reason: string | null;
 };
 
 type BlockRow = {
@@ -105,6 +113,10 @@ const rowToBooking = (row: BookingRow): Booking => ({
   reviewedById: row.reviewed_by ?? undefined,
   reviewedBy: row.reviewed_by_name ?? undefined,
   reviewedAt: row.reviewed_at ? Date.parse(row.reviewed_at) : undefined,
+  cancelledById: row.cancelled_by ?? undefined,
+  cancelledBy: row.cancelled_by_name ?? undefined,
+  cancelledAt: row.cancelled_at ? Date.parse(row.cancelled_at) : undefined,
+  cancellationReason: row.cancellation_reason ?? undefined,
 });
 
 const rowToBlock = (row: BlockRow): Block => ({
@@ -363,6 +375,43 @@ export async function review(
     })
     .eq("id", id)
     .eq("status", "awaiting_review")
+    .select()
+    .maybeSingle();
+  if (error) throw error;
+  return data ? rowToBooking(data as BookingRow) : null;
+}
+
+/** Cancel an approved customer reservation, freeing its slot and preserving who approved it. */
+export async function cancelApprovedBooking(
+  id: string,
+  cancellation: { adminId: string; adminName: string; reason?: string },
+) {
+  const { data, error } = await supabase
+    .from("bookings")
+    .update({
+      status: "cancelled",
+      cancelled_by: cancellation.adminId,
+      cancelled_by_name: cancellation.adminName,
+      cancelled_at: new Date().toISOString(),
+      cancellation_reason: cancellation.reason?.trim().slice(0, 500) || null,
+    })
+    .eq("id", id)
+    .eq("status", "approved")
+    .eq("created_by", "customer")
+    .select()
+    .maybeSingle();
+  if (error) throw error;
+  return data ? rowToBooking(data as BookingRow) : null;
+}
+
+/** Permanently delete an approved customer booking from the database, freeing its slot. */
+export async function deleteApprovedBooking(id: string) {
+  const { data, error } = await supabase
+    .from("bookings")
+    .delete()
+    .eq("id", id)
+    .eq("status", "approved")
+    .eq("created_by", "customer")
     .select()
     .maybeSingle();
   if (error) throw error;
