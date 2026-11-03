@@ -150,7 +150,7 @@ export default function RateEditor() {
 
       <div className="glass mt-6 rounded-3xl p-5 sm:p-6">
         <h2 className="font-display text-xl font-semibold">Time-based rates</h2>
-        <p className="mt-1 text-sm text-pine/65">Prices by hour range (24h clock). Book 3 or more hours to get an additional ₱50 off every booked hour.</p>
+        <p className="mt-1 text-sm text-pine/65">Prices by hour range (24h clock). Book 3 or more hours for ₱50 off each eligible hour after 12:00 PM; the 8:00 AM–12:00 PM rate is excluded.</p>
         {loading ? (
           <p className="mt-3 text-sm text-pine/60">Loading rates...</p>
         ) : (

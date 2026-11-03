@@ -289,7 +289,7 @@ export default function Booking() {
         )}
         {breakdown.discount > 0 && (
           <div className="mt-2 rounded-2xl bg-leaf/15 px-4 py-2 text-xs font-medium text-court">
-            Multi-hour discount applied: {peso(MULTI_HOUR_DISCOUNT)} off each hour, {peso(breakdown.discount)} total.
+            Multi-hour discount applied: {peso(MULTI_HOUR_DISCOUNT)} off each eligible hour after 12:00 PM. The 8:00 AM–12:00 PM rate is not discounted. You save {peso(breakdown.discount)} total.
           </div>
         )}
 

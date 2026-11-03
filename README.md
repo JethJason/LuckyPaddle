@@ -7,7 +7,7 @@ see who approved or rejected each booking.
 ## Features
 
 - 10-minute slot holds with a live countdown (double-booking is blocked by the database)
-- Multi-hour bookings with time-based rates (default: 8 AM-noon ₱350, noon-5 PM ₱500, 5 PM-1 AM ₱600); save an additional ₱50 per hour on bookings of 3+ hours
+- Multi-hour bookings with time-based rates (default: 8 AM-noon ₱350, noon-5 PM ₱500, 5 PM-1 AM ₱600); bookings of 3+ hours receive ₱50 off each eligible hour after noon (the morning rate is excluded)
 - Paddle and ball add-ons, limited by the inventory you set in admin
 - QR payment (GCash/Maya) with a payment reference number
 - Admin approval queue; the confirmation email is sent **only when an admin approves**
@@ -81,8 +81,9 @@ timestamp on each approved or rejected booking. Sign-in attempts are throttled p
 - `/admin/rate` - time-based rates and tiers
 - `/admin/inventory` - paddles and balls available
 
-Set `NEXT_PUBLIC_LOCATION_ADDRESS` and `NEXT_PUBLIC_LOCATION_QUERY` to the exact court address
-and Google Maps search text so the public location map points to the right place.
+The public map and directions use the exact Google Maps pin for Lucky Paddle Pickleball Court at
+Cogon Drive, Pardo, Cebu City. Payment is handled by the venue's QR workflow; this project does not
+integrate PayMongo.
 
 ## Email (Brevo, free)
 
