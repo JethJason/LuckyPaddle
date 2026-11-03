@@ -11,7 +11,7 @@ see who approved or rejected each booking.
 - Paddle and ball add-ons, limited by the inventory you set in admin
 - QR payment (GCash/Maya) with a payment reference number
 - Admin approval queue; the confirmation email is sent **only when an admin approves**
-- Admins can cancel approved customer bookings on request; the slot is released, the cancellation is recorded, and a notice is emailed. Refunds are not automatic and follow the stated non-refundable policy.
+- Admins can either mark an approved customer booking as cancelled (retaining its audit record) or permanently delete it; both release the slot and email the customer. Refunds are not automatic and follow the stated non-refundable policy.
 - Separate owner/admin accounts, scrypt password hashes, immediate account deactivation, and reviewer audit history
 - Self-service username and password changes in admin settings; password changes revoke existing sessions
 - Admin dashboard: revenue, pending approvals, today's occupancy, schedule, all bookings

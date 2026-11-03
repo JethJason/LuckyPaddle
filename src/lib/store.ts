@@ -404,6 +404,20 @@ export async function cancelApprovedBooking(
   return data ? rowToBooking(data as BookingRow) : null;
 }
 
+/** Permanently delete an approved customer booking from the database, freeing its slot. */
+export async function deleteApprovedBooking(id: string) {
+  const { data, error } = await supabase
+    .from("bookings")
+    .delete()
+    .eq("id", id)
+    .eq("status", "approved")
+    .eq("created_by", "customer")
+    .select()
+    .maybeSingle();
+  if (error) throw error;
+  return data ? rowToBooking(data as BookingRow) : null;
+}
+
 /** Admin-created reservation. It is approved immediately and blocks the slot. */
 export async function createReservation(info: {
   date: string;
