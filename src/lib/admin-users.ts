@@ -1,4 +1,4 @@
-import { bootstrapCredentials, hashAdminPassword, type AdminRole } from "@/lib/admin-auth";
+import { bootstrapCredentials, hashAdminPassword, verifyAdminPassword, type AdminRole } from "@/lib/admin-auth";
 import { supabase } from "@/lib/supabase";
 
 type AdminUser = {
@@ -35,11 +35,57 @@ export async function ensureBootstrapAdmin() {
 export async function findAdminByUsername(username: string) {
   const { data, error } = await supabase
     .from("admin_users")
-    .select("id,username,display_name,password_hash,role,active")
+    .select("id,username,display_name,password_hash,role,active,session_version")
     .eq("username", username)
     .maybeSingle();
   if (error) throw error;
   return data;
+}
+
+export async function changeAdminPassword(id: string, currentPassword: string, newPassword: string) {
+  const { data: user, error: findError } = await supabase
+    .from("admin_users")
+    .select("password_hash,session_version,active")
+    .eq("id", id)
+    .maybeSingle();
+  if (findError) throw findError;
+  if (!user || !user.active) return "not_found" as const;
+
+  if (!(await verifyAdminPassword(currentPassword, user.password_hash))) return "invalid_current" as const;
+  if (await verifyAdminPassword(newPassword, user.password_hash)) return "same_password" as const;
+
+  const password_hash = await hashAdminPassword(newPassword);
+  const { data, error } = await supabase
+    .from("admin_users")
+    .update({ password_hash, session_version: user.session_version + 1 })
+    .eq("id", id)
+    .eq("session_version", user.session_version)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  return data ? "updated" as const : "conflict" as const;
+}
+
+export async function changeAdminUsername(id: string, currentPassword: string, newUsername: string) {
+  const { data: user, error: findError } = await supabase
+    .from("admin_users")
+    .select("username,password_hash,active")
+    .eq("id", id)
+    .maybeSingle();
+  if (findError) throw findError;
+  if (!user || !user.active) return "not_found" as const;
+  if (!(await verifyAdminPassword(currentPassword, user.password_hash))) return "invalid_current" as const;
+  if (user.username === newUsername) return "unchanged" as const;
+
+  const { data, error } = await supabase
+    .from("admin_users")
+    .update({ username: newUsername })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (error?.code === "23505") return "taken" as const;
+  if (error) throw error;
+  return data ? "updated" as const : "not_found" as const;
 }
 
 export async function listAdminUsers(): Promise<AdminUser[]> {

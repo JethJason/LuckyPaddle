@@ -4,7 +4,7 @@ import Clover from "./Clover";
 import { CLOSE_HOUR, OPEN_HOUR, hourLabel } from "@/lib/config";
 import type { Block } from "@/lib/store";
 
-export default function BlockManager() {
+export default function BlockManager({ embedded = false }: { embedded?: boolean }) {
   const [date, setDate] = useState("");
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [fromHour, setFromHour] = useState(OPEN_HOUR);
@@ -69,20 +69,24 @@ export default function BlockManager() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:py-12">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <a href="/admin" className="flex items-center gap-2 font-display text-xl font-bold text-pine">
-          <Clover className="h-7 w-7 text-court" />
-          Lucky Paddle Admin
-        </a>
-        <a href="/admin" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">
-          Back to dashboard
-        </a>
-      </header>
+      {!embedded && (
+        <>
+          <header className="flex flex-wrap items-center justify-between gap-3">
+            <a href="/admin" className="flex items-center gap-2 font-display text-xl font-bold text-pine">
+              <Clover className="h-7 w-7 text-court" />
+              Lucky Paddle Admin
+            </a>
+            <a href="/admin" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">
+              Back to dashboard
+            </a>
+          </header>
 
-      <section className="mt-8">
-        <h1 className="font-display text-3xl font-bold">Block time</h1>
-        <p className="mt-1 text-pine/65">Prevent bookings for maintenance or private events.</p>
-      </section>
+          <section className="mt-8">
+            <h1 className="font-display text-3xl font-bold">Block time</h1>
+            <p className="mt-1 text-pine/65">Prevent bookings for maintenance or private events.</p>
+          </section>
+        </>
+      )}
 
       {error && <p role="alert" className="mt-5 rounded-2xl bg-red-500/10 p-4 text-sm text-red-700">{error}</p>}
       {notice && <p className="mt-5 rounded-2xl bg-leaf/15 p-4 text-sm text-court">{notice}</p>}

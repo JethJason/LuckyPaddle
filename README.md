@@ -12,6 +12,7 @@ see who approved or rejected each booking.
 - QR payment (GCash/Maya) with a payment reference number
 - Admin approval queue; the confirmation email is sent **only when an admin approves**
 - Separate owner/admin accounts, scrypt password hashes, immediate account deactivation, and reviewer audit history
+- Self-service username and password changes in admin settings; password changes revoke existing sessions
 - Admin dashboard: revenue, pending approvals, today's occupancy, schedule, all bookings
 - Admin-created reservations that immediately block customer bookings
 - Block time for maintenance/private events
@@ -71,9 +72,9 @@ Deactivating an account revokes its access immediately. The dashboard records th
 timestamp on each approved or rejected booking. Sign-in attempts are throttled per username and IP.
 
 - `/admin` - approvals, stats, schedule, all bookings
+- `/admin/settings` - change your own admin username and password
 - `/admin/users` - add or deactivate individual admin accounts (owner only)
-- `/admin/reserve` - create or cancel admin reservations
-- `/admin/block` - block time
+- `/admin/reserve` - create/cancel admin reservations or block time from the two tabs
 - `/admin/rate` - time-based rates and tiers
 - `/admin/inventory` - paddles and balls available
 

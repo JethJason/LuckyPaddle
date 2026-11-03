@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Clover from "./Clover";
+import BlockManager from "./BlockManager";
 import {
   BOOKING_START_DATE,
   CLOSE_HOUR,
@@ -23,6 +24,7 @@ const prettyDate = (date: string) => new Date(`${date}T00:00:00`).toLocaleDateSt
 });
 
 export default function ReserveManager() {
+  const [tab, setTab] = useState<"reserve" | "block">("reserve");
   const [date, setDate] = useState(BOOKING_START_DATE);
   const [court, setCourt] = useState(COURTS[0]?.id ?? 1);
   const [fromHour, setFromHour] = useState(OPEN_HOUR);
@@ -103,10 +105,22 @@ export default function ReserveManager() {
       </header>
 
       <section className="mt-8">
-        <h1 className="font-display text-4xl font-bold">Reserve a time</h1>
-        <p className="mt-1 text-pine/65">Create an admin reservation. The selected hours are immediately unavailable to customers.</p>
+        <h1 className="font-display text-4xl font-bold">Reserve</h1>
+        <p className="mt-1 text-pine/65">Reserve a court time or block a period for maintenance and other unavailable times.</p>
       </section>
 
+      <div className="glass mt-6 inline-flex rounded-2xl p-1.5" role="tablist" aria-label="Reserve options">
+        <button type="button" role="tab" aria-selected={tab === "reserve"} onClick={() => setTab("reserve")}
+          className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition ${tab === "reserve" ? "bg-court text-white shadow" : "text-pine/65 hover:bg-white/70"}`}>
+          Reserve a time
+        </button>
+        <button type="button" role="tab" aria-selected={tab === "block"} onClick={() => setTab("block")}
+          className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition ${tab === "block" ? "bg-court text-white shadow" : "text-pine/65 hover:bg-white/70"}`}>
+          Block time
+        </button>
+      </div>
+
+      {tab === "block" ? <div className="mt-5"><BlockManager embedded /></div> : <>
       {error && <p role="alert" className="mt-5 rounded-2xl bg-red-500/10 p-4 text-sm text-red-700">{error}</p>}
       {notice && <p role="status" className="mt-5 rounded-2xl bg-leaf/15 p-4 text-sm text-court">{notice}</p>}
 
@@ -185,6 +199,7 @@ export default function ReserveManager() {
           </ul>
         )}
       </section>
+      </>}
     </main>
   );
 }

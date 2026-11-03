@@ -8,6 +8,7 @@ create table if not exists public.admin_users (
   username text not null unique,
   display_name text not null,
   password_hash text not null,
+  session_version int not null default 0 check (session_version >= 0),
   role text not null default 'admin' check (role in ('owner', 'admin')),
   active boolean not null default true,
   created_by uuid references public.admin_users(id) on delete set null,
@@ -15,6 +16,9 @@ create table if not exists public.admin_users (
 );
 
 create index if not exists admin_users_active_idx on public.admin_users (active, role);
+alter table public.admin_users add column if not exists session_version int not null default 0;
+alter table public.admin_users drop constraint if exists admin_users_session_version_check;
+alter table public.admin_users add constraint admin_users_session_version_check check (session_version >= 0);
 
 create table if not exists public.bookings (
   id uuid primary key default gen_random_uuid(),

@@ -4,7 +4,7 @@ import { isAdmin, usesDevPassword } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminLoginPage() {
+export default async function AdminLoginPage({ searchParams }: { searchParams: { passwordChanged?: string } }) {
   if (await isAdmin()) redirect("/admin");
-  return <AdminLogin showDevHint={usesDevPassword()} />;
+  return <AdminLogin showDevHint={usesDevPassword()} passwordChanged={searchParams.passwordChanged === "1"} />;
 }

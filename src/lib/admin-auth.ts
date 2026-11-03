@@ -9,8 +9,8 @@ const scrypt = promisify(nodeScrypt);
 
 export type AdminRole = "owner" | "admin";
 export type AdminIdentity = { id: string; username: string; displayName: string; role: AdminRole };
-type AdminUserRow = { id: string; username: string; display_name: string; role: AdminRole; active: boolean };
-type SessionClaims = AdminIdentity & { expiresAt: number };
+type AdminUserRow = { id: string; username: string; display_name: string; role: AdminRole; active: boolean; session_version: number };
+type SessionClaims = AdminIdentity & { expiresAt: number; sessionVersion: number };
 
 export const ADMIN_COOKIE = COOKIE_NAME;
 export const ADMIN_SESSION_SECONDS = SESSION_SECONDS;
@@ -40,8 +40,8 @@ export async function verifyAdminPassword(password: string, stored: string) {
   return derived.length === expected.length && timingSafeEqual(derived, expected);
 }
 
-export function createSessionValue(admin: AdminIdentity) {
-  const claims: SessionClaims = { ...admin, expiresAt: Date.now() + SESSION_SECONDS * 1000 };
+export function createSessionValue(admin: AdminIdentity, sessionVersion = 0) {
+  const claims: SessionClaims = { ...admin, sessionVersion, expiresAt: Date.now() + SESSION_SECONDS * 1000 };
   const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
   return `${payload}.${signature(payload).toString("base64url")}`;
 }
@@ -56,6 +56,7 @@ function readSessionValue(value?: string): SessionClaims | null {
     if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
     const claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as SessionClaims;
     if (!claims.id || !claims.username || !claims.displayName || !["owner", "admin"].includes(claims.role)) return null;
+    if (!Number.isInteger(claims.sessionVersion) || claims.sessionVersion < 0) return null;
     if (!Number.isFinite(claims.expiresAt) || claims.expiresAt <= Date.now()) return null;
     return claims;
   } catch {
@@ -69,11 +70,12 @@ export async function getAdminSession(): Promise<AdminIdentity | null> {
   if (!claims) return null;
   const { data, error } = await supabase
     .from("admin_users")
-    .select("id,username,display_name,role,active")
+    .select("id,username,display_name,role,active,session_version")
     .eq("id", claims.id)
     .maybeSingle();
   if (error || !data || !(data as AdminUserRow).active) return null;
   const user = data as AdminUserRow;
+  if (claims.sessionVersion !== user.session_version) return null;
   return { id: user.id, username: user.username, displayName: user.display_name, role: user.role };
 }
 
