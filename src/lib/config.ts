@@ -44,14 +44,15 @@ export const IMAGES = {
   court: "/court.svg",
 };
 
-/** Venue address and search text are kept explicit so Maps resolves the Cebu location. */
+/** Exact venue address and coordinates from the owner's Google Maps place pin. */
 export const LOCATION = {
-  name: "Lucky Paddle",
-  address: "Cogon Drive, Pardo, Cebu City",
-  query: "Lucky Paddle, Cogon Drive, Pardo, Cebu City, Cebu, Philippines",
+  name: "Lucky Paddle Pickleball Court",
+  address: "Cogon Drive, Pardo, Cebu City, Cebu, Philippines",
+  latitude: 10.272801,
+  longitude: 123.8594747,
 };
-export const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(LOCATION.query)}`;
-export const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(LOCATION.query)}&output=embed`;
+export const MAPS_URL = "https://www.google.com/maps/place/Lucky+Paddle+Pickleball+Court/@10.2728036,123.8570392,18z/data=!4m6!3m5!1s0x33a99d002ca80e91:0xb0eb88ed89a39ad4!8m2!3d10.272801!4d123.8594747!16s%2Fg%2F11z_0v3t6t";
+export const MAPS_EMBED_URL = `https://www.google.com/maps?q=${LOCATION.latitude},${LOCATION.longitude}&z=18&output=embed`;
 
 export const BOOKABLE_HOURS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + i);
 export const END_HOURS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + 1 + i);

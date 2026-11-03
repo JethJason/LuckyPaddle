@@ -81,8 +81,9 @@ timestamp on each approved or rejected booking. Sign-in attempts are throttled p
 - `/admin/rate` - time-based rates and tiers
 - `/admin/inventory` - paddles and balls available
 
-The public map and directions use the configured venue location: Lucky Paddle, Cogon Drive, Pardo,
-Cebu City. Payment is handled by the venue's QR workflow; this project does not integrate PayMongo.
+The public map and directions use the exact Google Maps pin for Lucky Paddle Pickleball Court at
+Cogon Drive, Pardo, Cebu City. Payment is handled by the venue's QR workflow; this project does not
+integrate PayMongo.
 
 ## Email (Brevo, free)
 
