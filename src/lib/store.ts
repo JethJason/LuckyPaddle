@@ -42,7 +42,8 @@ export interface Booking {
 }
 
 export const DEFAULT_TIME_RATES: TimeRate[] = [
-  { start: 8, end: 17, price: 500 },
+  { start: 8, end: 12, price: 350 },
+  { start: 12, end: 17, price: 500 },
   { start: 17, end: 25, price: 600 },
 ];
 
