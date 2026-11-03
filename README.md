@@ -38,6 +38,9 @@ With no `BREVO_API_KEY` or `RESEND_API_KEY`, confirmation emails are logged to t
    This creates `admin_users`, `bookings`, `blocks`, `inventory` and `app_settings`, plus the overlap
    constraints that prevent double booking. Re-run it on existing installations to add missing
    booking audit fields and admin-user support.
+   Admin login remains compatible with installations that have not yet added
+   `admin_users.session_version`; run the latest schema before using password changes and
+   cross-device session revocation.
 3. Open **Project Settings > API** and copy:
    - **Project URL** into `NEXT_PUBLIC_SUPABASE_URL`
    - **service_role** key into `SUPABASE_SERVICE_ROLE_KEY` (keep it secret, server-side only)

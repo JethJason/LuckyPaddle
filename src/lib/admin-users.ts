@@ -10,6 +10,9 @@ type AdminUser = {
   created_at: string;
 };
 
+const requiresSessionVersionMigration = (error: { code?: string; message?: string }) =>
+  (error.code === "42703" || error.code === "PGRST204") && Boolean(error.message?.includes("session_version"));
+
 /** Creates the first owner exactly once, using server-only environment credentials. */
 export async function ensureBootstrapAdmin() {
   const { count, error: countError } = await supabase
@@ -33,11 +36,20 @@ export async function ensureBootstrapAdmin() {
 }
 
 export async function findAdminByUsername(username: string) {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("admin_users")
     .select("id,username,display_name,password_hash,role,active,session_version")
     .eq("username", username)
     .maybeSingle();
+  if (error && (error.code === "42703" || error.code === "PGRST204") && error.message.includes("session_version")) {
+    const fallback = await supabase
+      .from("admin_users")
+      .select("id,username,display_name,password_hash,role,active")
+      .eq("username", username)
+      .maybeSingle();
+    data = fallback.data ? { ...fallback.data, session_version: 0 } : null;
+    error = fallback.error;
+  }
   if (error) throw error;
   return data;
 }
@@ -48,7 +60,12 @@ export async function changeAdminPassword(id: string, currentPassword: string, n
     .select("password_hash,session_version,active")
     .eq("id", id)
     .maybeSingle();
-  if (findError) throw findError;
+  if (findError) {
+    if (requiresSessionVersionMigration(findError)) {
+      throw new Error("Run the latest supabase/schema.sql in your Supabase project before changing admin passwords.");
+    }
+    throw findError;
+  }
   if (!user || !user.active) return "not_found" as const;
 
   if (!(await verifyAdminPassword(currentPassword, user.password_hash))) return "invalid_current" as const;
@@ -62,7 +79,12 @@ export async function changeAdminPassword(id: string, currentPassword: string, n
     .eq("session_version", user.session_version)
     .select("id")
     .maybeSingle();
-  if (error) throw error;
+  if (error) {
+    if (requiresSessionVersionMigration(error)) {
+      throw new Error("Run the latest supabase/schema.sql in your Supabase project before changing admin passwords.");
+    }
+    throw error;
+  }
   return data ? "updated" as const : "conflict" as const;
 }
 

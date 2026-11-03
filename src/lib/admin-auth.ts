@@ -26,6 +26,10 @@ function signature(payload: string) {
   return createHmac("sha256", signingSecret()).update(`lucky-paddle-admin:${payload}`).digest();
 }
 
+function missingSessionVersion(error: { code?: string; message?: string } | null) {
+  return Boolean(error && (error.code === "42703" || error.code === "PGRST204") && error.message?.includes("session_version"));
+}
+
 export async function hashAdminPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const derived = await scrypt(password, salt, 64) as Buffer;
@@ -68,11 +72,20 @@ function readSessionValue(value?: string): SessionClaims | null {
 export async function getAdminSession(): Promise<AdminIdentity | null> {
   const claims = readSessionValue(cookies().get(COOKIE_NAME)?.value);
   if (!claims) return null;
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("admin_users")
     .select("id,username,display_name,role,active,session_version")
     .eq("id", claims.id)
     .maybeSingle();
+  if (missingSessionVersion(error)) {
+    const fallback = await supabase
+      .from("admin_users")
+      .select("id,username,display_name,role,active")
+      .eq("id", claims.id)
+      .maybeSingle();
+    data = fallback.data ? { ...fallback.data, session_version: 0 } : null;
+    error = fallback.error;
+  }
   if (error || !data || !(data as AdminUserRow).active) return null;
   const user = data as AdminUserRow;
   if (claims.sessionVersion !== user.session_version) return null;
