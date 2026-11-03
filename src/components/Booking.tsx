@@ -395,9 +395,6 @@ export default function Booking() {
             <div className="rounded-2xl bg-white p-4 text-center text-pine">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={QR_IMAGE} alt="Payment QR code" className="mx-auto h-44 w-44 object-contain" />
-              <div className="mt-2 text-sm">
-                Scan with GCash and pay exactly <b>{peso(total)}</b>
-              </div>
             </div>
 
             {(["name", "email", "phone", "reference"] as const).map((k) => (
