@@ -70,6 +70,10 @@ export default function AdminDashboard() {
   const [proofPreview, setProofPreview] = useState<{ url: string; name: string; reference?: string } | null>(null);
   const [cancellationChoice, setCancellationChoice] = useState<Booking | null>(null);
   const [cancellationReason, setCancellationReason] = useState("Customer requested cancellation");
+  const [bookingSearch, setBookingSearch] = useState("");
+  const [bookingDate, setBookingDate] = useState("");
+  const [bookingHour, setBookingHour] = useState("");
+  const [bookingStatus, setBookingStatus] = useState<"all" | Status>("all");
 
   const load = useCallback(async (selected: string) => {
     try {
@@ -180,6 +184,15 @@ export default function AdminDashboard() {
     : [];
 
   const pending = data?.bookings.filter((booking) => booking.status === "awaiting_review") ?? [];
+  const normalizedSearch = bookingSearch.trim().toLocaleLowerCase();
+  const filteredBookings = (data?.bookings ?? []).filter((booking) => {
+    const matchesSearch = !normalizedSearch || [booking.name, booking.email, booking.phone, booking.reference]
+      .some((value) => value?.toLocaleLowerCase().includes(normalizedSearch));
+    const matchesDate = !bookingDate || booking.date === bookingDate;
+    const matchesHour = !bookingHour || booking.hour === Number(bookingHour);
+    const matchesStatus = bookingStatus === "all" || booking.status === bookingStatus;
+    return matchesSearch && matchesDate && matchesHour && matchesStatus;
+  });
 
   return (
     <main className="mx-auto max-w-6xl px-5 pb-16">
@@ -372,7 +385,41 @@ export default function AdminDashboard() {
             <div className="glass flex h-full min-w-0 flex-col self-stretch rounded-3xl p-5 sm:p-6">
               <div>
                 <h2 className="font-display text-xl font-semibold">All bookings</h2>
-                <p className="text-sm text-pine/55">{data.bookings.length} {data.bookings.length === 1 ? "record" : "records"} · newest first</p>
+                <p className="text-sm text-pine/55">Showing {filteredBookings.length} of {data.bookings.length} {data.bookings.length === 1 ? "record" : "records"} · newest first</p>
+              </div>
+
+              <div className="mt-4 grid gap-3 rounded-2xl border border-white/70 bg-white/45 p-3 sm:grid-cols-2 xl:grid-cols-4">
+                <label className="flex min-w-0 flex-col gap-1 text-[11px] font-semibold text-pine/55 sm:col-span-2 xl:col-span-1">
+                  Search player or contact
+                  <input type="search" value={bookingSearch} onChange={(event) => setBookingSearch(event.target.value)} placeholder="Name, email, phone, reference" aria-label="Search player or contact"
+                    className="w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm font-normal text-pine placeholder:text-pine/35" />
+                </label>
+                <label className="flex min-w-0 flex-col gap-1 text-[11px] font-semibold text-pine/55">
+                  Booking date
+                  <input type="date" value={bookingDate} onChange={(event) => setBookingDate(event.target.value)} aria-label="Filter by booking date"
+                    className="w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm font-normal text-pine" />
+                </label>
+                <label className="flex min-w-0 flex-col gap-1 text-[11px] font-semibold text-pine/55">
+                  Start time
+                  <select value={bookingHour} onChange={(event) => setBookingHour(event.target.value)} aria-label="Filter by booking start time"
+                    className="w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm font-normal text-pine">
+                    <option value="">Any time</option>
+                    {Array.from({ length: 17 }, (_, index) => index + 8).map((hour) => <option key={hour} value={hour}>{hourLabel(hour)}</option>)}
+                  </select>
+                </label>
+                <label className="flex min-w-0 flex-col gap-1 text-[11px] font-semibold text-pine/55">
+                  Status
+                  <select value={bookingStatus} onChange={(event) => setBookingStatus(event.target.value as "all" | Status)} aria-label="Filter by booking status"
+                    className="w-full rounded-xl border border-white bg-white/80 px-3 py-2 text-sm font-normal text-pine">
+                    <option value="all">All statuses</option>
+                    {(Object.keys(STATUS_LABELS) as Status[]).map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
+                  </select>
+                </label>
+                <button type="button" onClick={() => { setBookingSearch(""); setBookingDate(""); setBookingHour(""); setBookingStatus("all"); }}
+                  disabled={!bookingSearch && !bookingDate && !bookingHour && bookingStatus === "all"}
+                  className="justify-self-start rounded-full bg-pine/10 px-3 py-1.5 text-xs font-semibold text-pine/70 transition hover:bg-pine/15 disabled:cursor-not-allowed disabled:opacity-40 sm:col-span-2 xl:col-span-4">
+                  Clear filters
+                </button>
               </div>
 
               {data.bookings.length === 0 ? (
@@ -380,6 +427,10 @@ export default function AdminDashboard() {
                   <Clover className="mx-auto h-8 w-8 text-leaf/60" />
                   <p className="mt-3 font-display font-semibold">No bookings yet</p>
                   <p className="mt-1 text-sm text-pine/55">New QR payments and active holds will show up here.</p>
+                </div>
+              ) : filteredBookings.length === 0 ? (
+                <div className="mt-4 rounded-2xl bg-white/40 p-8 text-center text-sm text-pine/55">
+                  No bookings match these filters. Try changing or clearing the search criteria.
                 </div>
               ) : (
                 <div className="mt-4 min-h-0 max-h-[30rem] flex-1 overflow-auto">
@@ -396,7 +447,7 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.bookings.map((booking) => (
+                      {filteredBookings.map((booking) => (
                         <tr key={booking.id} className="border-t border-pine/10 align-top">
                           <td className="whitespace-nowrap py-3 pr-3 text-pine/70">{prettyDate(booking.date)}</td>
                           <td className="whitespace-nowrap py-3 pr-3">
