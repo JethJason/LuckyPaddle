@@ -136,6 +136,15 @@ export default function Booking() {
   const rangeUnavailable = (start: number, end: number) =>
     HOURS.some((h) => h >= start && h < end && unavailable(h));
 
+  useEffect(() => {
+    if (availabilityDate !== date || !rangeUnavailable(fromHour, toHour)) return;
+    const firstAvailable = HOURS.find((h) => !unavailable(h));
+    if (firstAvailable === undefined) return;
+    setFromHour(firstAvailable);
+    setToHour(firstAvailable + 1);
+    setDraftActive(false);
+  }, [availabilityDate, date, status, court, fromHour, toHour, hold]);
+
   const rateIndexForHour = (h: number) => timeRates.findIndex((r) => h >= r.start && h < r.end);
 
   function changeFrom(h: number) {
