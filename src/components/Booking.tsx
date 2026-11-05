@@ -53,6 +53,7 @@ export default function Booking() {
   const [date, setDate] = useState(iso(DAYS[0]));
   const [court, setCourt] = useState(1);
   const [status, setStatus] = useState<Status>({});
+  const [availabilityDate, setAvailabilityDate] = useState("");
   const [now, setNow] = useState({ date: "", hour: 0 });
   const [timeRates, setTimeRates] = useState<TimeRate[]>([]);
   const [hold, setHold] = useState<Hold | null>(null);
@@ -88,7 +89,9 @@ export default function Booking() {
       setError(j.error ?? "Could not load availability.");
       return;
     }
+    if (j.date !== date) return;
     setStatus(j.status ?? {});
+    setAvailabilityDate(date);
     setNow(j.now ?? { date: "", hour: 0 });
     if (Array.isArray(j.timeRates)) setTimeRates(j.timeRates);
     if (typeof j.maxPaddles === "number") setMaxPaddles(Math.min(MAX_PADDLES, j.maxPaddles));
@@ -129,7 +132,7 @@ export default function Booking() {
   const past = (h: number) => date < BOOKING_START_DATE || date < now.date || (date === now.date && h <= now.hour);
 
   const inHold = (h: number) => !!hold && hold.date === date && hold.court === court && h >= hold.hour && h < hold.hour + hold.duration;
-  const unavailable = (h: number) => past(h) || (!!status[court]?.[h] && !inHold(h));
+  const unavailable = (h: number) => availabilityDate !== date || past(h) || (!!status[court]?.[h] && !inHold(h));
   const rangeUnavailable = (start: number, end: number) =>
     HOURS.some((h) => h >= start && h < end && unavailable(h));
 
@@ -283,14 +286,23 @@ export default function Booking() {
             From
             <select value={fromHour} onChange={(e) => changeFrom(Number(e.target.value))}
               className="rounded-xl border border-white bg-white px-3 py-2 text-base font-semibold text-pine outline-none focus:ring-2 focus:ring-court">
-              {HOURS.map((h) => <option key={h} value={h} disabled={unavailable(h)}>{hourLabel(h)}</option>)}
+              {HOURS.filter((h) => h === fromHour || !unavailable(h)).map((h) => (
+                <option key={h} value={h} disabled={unavailable(h)}>
+                  {hourLabel(h)}{unavailable(h) ? " · Unavailable" : ""}
+                </option>
+              ))}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium text-pine/70">
             To
             <select value={toHour} onChange={(e) => changeTo(Number(e.target.value))}
               className="rounded-xl border border-white bg-white px-3 py-2 text-base font-semibold text-pine outline-none focus:ring-2 focus:ring-court">
-              {END_HOURS.map((h) => <option key={h} value={h} disabled={h <= fromHour || rangeUnavailable(fromHour, h)}>{hourLabel(h)}</option>)}
+              {END_HOURS.filter((h) => h === toHour || (h > fromHour && !rangeUnavailable(fromHour, h))).map((h) => {
+                const disabled = h <= fromHour || rangeUnavailable(fromHour, h);
+                return <option key={h} value={h} disabled={disabled}>
+                  {hourLabel(h)}{disabled ? " · Unavailable" : ""}
+                </option>;
+              })}
             </select>
           </label>
           <button onClick={bookRange} disabled={toHour <= fromHour || selectionMatchesHold || rangeUnavailable(fromHour, toHour)}
