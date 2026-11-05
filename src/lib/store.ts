@@ -185,14 +185,16 @@ export async function dayStatus(date: string) {
   await sweep();
   const { data, error } = await supabase
     .from("bookings")
-    .select("court,hour,duration,status")
-    .eq("date", date)
-    .in("status", ACTIVE_STATUSES);
+    .select("date,court,hour,duration,status")
+    .order("created_at", { ascending: false })
+    .limit(300);
   if (error) throw error;
 
   const rank = { held: 0, pending: 1, booked: 2 } as const;
   const out: Record<number, Record<number, "held" | "pending" | "booked">> = {};
   for (const row of data ?? []) {
+    if (row.date !== date) continue;
+    if (!ACTIVE_STATUSES.includes(row.status as (typeof ACTIVE_STATUSES)[number])) continue;
     const cell = row.status === "approved" ? "booked" : row.status === "awaiting_review" ? "pending" : "held";
     for (let i = 0; i < (row.duration ?? 1); i++) {
       const h = row.hour + i;
