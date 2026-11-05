@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Clover from "@/components/Clover";
 import {
   BALLS_PRICE,
@@ -70,6 +70,7 @@ export default function Booking() {
   const [proof, setProof] = useState<File | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
   const [qrZoom, setQrZoom] = useState(1);
+  const paymentPanelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!qrOpen) return;
@@ -127,6 +128,11 @@ export default function Booking() {
 
   const past = (h: number) => date < BOOKING_START_DATE || date < now.date || (date === now.date && h <= now.hour);
 
+  const inHold = (h: number) => !!hold && hold.date === date && hold.court === court && h >= hold.hour && h < hold.hour + hold.duration;
+  const unavailable = (h: number) => past(h) || (!!status[court]?.[h] && !inHold(h));
+  const rangeUnavailable = (start: number, end: number) =>
+    HOURS.some((h) => h >= start && h < end && unavailable(h));
+
   const rateIndexForHour = (h: number) => timeRates.findIndex((r) => h >= r.start && h < r.end);
 
   function changeFrom(h: number) {
@@ -164,7 +170,7 @@ export default function Booking() {
   async function bookRange() {
     setError("");
     if (toHour <= fromHour) { setError("End time must be after the start time."); return; }
-    if (past(fromHour)) { setError("That start time has already passed. Pick a later time."); return; }
+    if (rangeUnavailable(fromHour, toHour)) { setError("That time includes a slot that is unavailable. Pick another time."); return; }
     const r = await fetch("/api/hold", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -181,6 +187,9 @@ export default function Booking() {
     setDraftActive(false);
     setError("");
     load();
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      window.requestAnimationFrame(() => paymentPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
   }
 
   async function release() {
@@ -224,7 +233,6 @@ export default function Booking() {
     }
   }
 
-  const inHold = (h: number) => !!hold && hold.date === date && hold.court === court && h >= hold.hour && h < hold.hour + hold.duration;
   const mm = String(Math.floor(left / 60)).padStart(2, "0"), ss = String(left % 60).padStart(2, "0");
   const duration = toHour - fromHour;
   const selectionMatchesHold = !!hold && hold.date === date && hold.court === court && hold.hour === fromHour && hold.duration === duration;
@@ -275,17 +283,17 @@ export default function Booking() {
             From
             <select value={fromHour} onChange={(e) => changeFrom(Number(e.target.value))}
               className="rounded-xl border border-white bg-white px-3 py-2 text-base font-semibold text-pine outline-none focus:ring-2 focus:ring-court">
-              {HOURS.map((h) => <option key={h} value={h}>{hourLabel(h)}</option>)}
+              {HOURS.map((h) => <option key={h} value={h} disabled={unavailable(h)}>{hourLabel(h)}</option>)}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium text-pine/70">
             To
             <select value={toHour} onChange={(e) => changeTo(Number(e.target.value))}
               className="rounded-xl border border-white bg-white px-3 py-2 text-base font-semibold text-pine outline-none focus:ring-2 focus:ring-court">
-              {END_HOURS.map((h) => <option key={h} value={h}>{hourLabel(h)}</option>)}
+              {END_HOURS.map((h) => <option key={h} value={h} disabled={h <= fromHour || rangeUnavailable(fromHour, h)}>{hourLabel(h)}</option>)}
             </select>
           </label>
-          <button onClick={bookRange} disabled={toHour <= fromHour || selectionMatchesHold}
+          <button onClick={bookRange} disabled={toHour <= fromHour || selectionMatchesHold || rangeUnavailable(fromHour, toHour)}
             className="rounded-xl bg-court px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-pine disabled:cursor-not-allowed disabled:opacity-50">
             {selectionMatchesHold ? "Time already held" : hold ? "Update held time" : `Hold ${hourLabel(fromHour)} - ${hourLabel(toHour)}`}
           </button>
@@ -323,7 +331,7 @@ export default function Booking() {
             const s = status[court]?.[h];
             const held = inHold(h);
             const draftSelected = inDraftSelection(h);
-            const disabled = past(h) || (!!s && !held);
+            const disabled = unavailable(h);
             const hl = getHighlight(h);
             return <button key={h} disabled={disabled} onClick={() => selectCalendarHour(h)} onDoubleClick={() => setDraftActive(false)}
               aria-pressed={held || draftSelected}
@@ -356,7 +364,7 @@ export default function Booking() {
         </div>
       </div>
 
-      <aside className="glass-dark h-fit rounded-3xl p-6 text-white lg:sticky lg:top-24">
+      <aside ref={paymentPanelRef} className="glass-dark h-fit scroll-mt-4 rounded-3xl p-6 text-white lg:sticky lg:top-24">
         <h3 className="flex items-center gap-2 font-display text-2xl font-semibold">
           <Clover className="h-6 w-6 text-ball" />
           Your lucky booking
