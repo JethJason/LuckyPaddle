@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHold, databaseConfigured, getBooking, isBlocked, isValidSlot, releaseHold, updateHold } from "@/lib/store";
 import { manilaNow } from "@/lib/time";
 import { BOOKING_START_DATE, CLOSE_HOUR } from "@/lib/config";
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 const NOT_CONFIGURED =
   "Database is not configured. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to .env.local.";
