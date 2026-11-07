@@ -174,6 +174,28 @@ export default function AdminDashboard() {
     }
   }
 
+  async function deleteCancelled(booking: Booking) {
+    if (!window.confirm(`Permanently delete the cancelled booking for ${booking.name ?? "this customer"}? This removes it and its receipt from the database and can't be undone.`)) return;
+    setBusyId(booking.id);
+    setError("");
+    setNotice("");
+    try {
+      const res = await fetch("/api/admin/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: booking.id, action: "purge" }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Could not delete the booking.");
+      setNotice("Cancelled booking permanently deleted.");
+      await load(date);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete the booking.");
+    } finally {
+      setBusyId("");
+    }
+  }
+
   const cards = data
     ? [
         { label: "Revenue", value: peso(data.stats.revenue), hint: `${data.stats.approvedCount} approved` },
@@ -480,6 +502,12 @@ export default function AdminDashboard() {
                                 cancelled by {booking.cancelledBy}
                                 {booking.cancellationReason ? ` · ${booking.cancellationReason}` : ""}
                               </div>
+                            )}
+                            {booking.status === "cancelled" && (
+                              <button type="button" onClick={() => void deleteCancelled(booking)} disabled={busyId === booking.id}
+                                className="mt-1 block whitespace-nowrap text-[10px] font-semibold text-red-700 underline decoration-red-300 underline-offset-2 disabled:opacity-50">
+                                {busyId === booking.id ? "Deleting…" : "Delete permanently"}
+                              </button>
                             )}
                             {booking.status === "approved" && booking.createdBy !== "admin" && (
                               <button type="button" onClick={() => { setCancellationChoice(booking); setCancellationReason("Customer requested cancellation"); }} disabled={busyId === booking.id}
