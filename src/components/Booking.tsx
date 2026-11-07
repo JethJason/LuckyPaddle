@@ -1,4 +1,5 @@
 "use client";
+import { flushSync } from "react-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Clover from "@/components/Clover";
 import {
@@ -102,6 +103,14 @@ export default function Booking() {
   useEffect(() => { load(); const t = setInterval(load, 10_000); return () => clearInterval(t); }, [load]);
 
   useEffect(() => {
+    const refreshAfterRestore = (event: PageTransitionEvent) => {
+      if (event.persisted) void load();
+    };
+    window.addEventListener("pageshow", refreshAfterRestore);
+    return () => window.removeEventListener("pageshow", refreshAfterRestore);
+  }, [load]);
+
+  useEffect(() => {
     if (!hold) return;
     const tick = () => {
       const s = Math.max(0, Math.round((hold.expiresAt - Date.now()) / 1000));
@@ -131,7 +140,9 @@ export default function Booking() {
 
   const past = (h: number) => date < BOOKING_START_DATE || date < now.date || (date === now.date && h <= now.hour);
 
-  const inHold = (h: number) => !!hold && hold.date === date && hold.court === court && h >= hold.hour && h < hold.hour + hold.duration;
+  const inHold = (h: number) =>
+    !!hold && hold.date === date && hold.court === court && h >= hold.hour && h < hold.hour + hold.duration &&
+    (!status[court]?.[h] || status[court]?.[h] === "held");
   const unavailable = (h: number) => availabilityDate !== date || past(h) || (!!status[court]?.[h] && !inHold(h));
   const rangeUnavailable = (start: number, end: number) =>
     HOURS.some((h) => h >= start && h < end && unavailable(h));
@@ -238,7 +249,17 @@ export default function Booking() {
         if (r.status === 410) setHold(null);
         return;
       }
-      window.location.href = `/success?id=${hold.id}`;
+      const submittedHold = hold;
+      flushSync(() => {
+        setStatus((current) => {
+          const courtStatus = { ...(current[submittedHold.court] ?? {}) };
+          for (let h = submittedHold.hour; h < submittedHold.hour + submittedHold.duration; h++)
+            courtStatus[h] = "pending";
+          return { ...current, [submittedHold.court]: courtStatus };
+        });
+        setHold(null);
+      });
+      window.location.href = `/success?id=${submittedHold.id}`;
     } catch {
       setBusy(false);
       setError("Could not upload the receipt. Check your connection and try again.");
