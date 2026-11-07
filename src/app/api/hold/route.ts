@@ -22,11 +22,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That time has already passed." }, { status: 400 });
 
   try {
-    if (await isBlocked(date, court, hour, duration))
-      return NextResponse.json({ error: "That time is blocked by admin." }, { status: 409 });
-
     if (holdId && typeof holdId !== "string")
       return NextResponse.json({ error: "Invalid hold id." }, { status: 400 });
+
+    if (await isBlocked(date, court, hour, duration, typeof holdId === "string" ? holdId : undefined))
+      return NextResponse.json({ error: "That time is unavailable." }, { status: 409 });
 
     const hold = holdId
       ? await updateHold(holdId, date, court, hour, duration)
