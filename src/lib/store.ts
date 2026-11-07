@@ -53,7 +53,8 @@ export const DEFAULT_TIME_RATES: TimeRate[] = [
 
 export const DEFAULT_RATES: RateTier[] = [{ maxHours: 24, price: 500 }];
 
-const ACTIVE_STATUSES = ["held", "awaiting_review", "approved"] as const;
+/** Booking states that keep a slot reserved until review or cancellation. */
+const SLOT_BLOCKING_STATUSES = ["held", "awaiting_review", "approved"] as const;
 
 type BookingRow = {
   id: string;
@@ -185,7 +186,7 @@ export async function dayStatus(date: string) {
   await sweep();
   const { data, error } = await supabase
     .from("bookings")
-    .select("date,court,hour,duration,status").eq("date", date).in("status", ACTIVE_STATUSES)
+    .select("date,court,hour,duration,status").eq("date", date).in("status", SLOT_BLOCKING_STATUSES)
     .order("created_at", { ascending: false })
     .limit(300);
   if (error) throw error;
@@ -206,10 +207,35 @@ export async function dayStatus(date: string) {
   return out;
 }
 
-export async function isBlocked(date: string, court: number, hour: number, duration = 1) {
+export async function isBlocked(
+  date: string,
+  court: number,
+  hour: number,
+  duration = 1,
+  ignoreBookingId?: string,
+) {
   if (!databaseConfigured()) return false;
-  const { data } = await supabase.from("blocks").select("hour,duration").eq("date", date).eq("court", court);
-  return (data ?? []).some((block) => hour < block.hour + (block.duration ?? 1) && hour + duration > block.hour);
+  const bookingQuery = supabase
+    .from("bookings")
+    .select("id,hour,duration,status,expires_at")
+    .eq("date", date)
+    .eq("court", court)
+    .in("status", SLOT_BLOCKING_STATUSES);
+  const [{ data: blocks, error: blocksError }, { data: bookings, error: bookingsError }] = await Promise.all([
+    supabase.from("blocks").select("hour,duration").eq("date", date).eq("court", court),
+    ignoreBookingId ? bookingQuery.neq("id", ignoreBookingId) : bookingQuery,
+  ]);
+  if (blocksError) throw blocksError;
+  if (bookingsError) throw bookingsError;
+
+  const overlaps = (row: { hour: number; duration: number | null }) =>
+    hour < row.hour + (row.duration ?? 1) && hour + duration > row.hour;
+  const now = Date.now();
+  const activeBookingOverlaps = (bookings ?? []).some((booking) =>
+    (booking.status !== "held" || booking.expires_at === null || Date.parse(booking.expires_at) > now) &&
+    overlaps(booking),
+  );
+  return (blocks ?? []).some(overlaps) || activeBookingOverlaps;
 }
 
 export async function createHold(
@@ -254,6 +280,9 @@ export async function updateHold(
   hour: number,
   duration: number,
 ): Promise<Booking | null> {
+  await sweep();
+  if (await isBlocked(date, court, hour, duration, id)) return null;
+
   const rates = await getTimeRates();
   const amount = getPriceForRange(hour, hour + duration, rates);
   const update = (clearProof: boolean) => supabase
@@ -501,7 +530,7 @@ export async function addBlock(
     .select("hour,duration")
     .eq("date", date)
     .eq("court", court)
-    .in("status", ACTIVE_STATUSES);
+    .in("status", SLOT_BLOCKING_STATUSES);
   if ((active ?? []).some((b) => hour < b.hour + (b.duration ?? 1) && hour + duration > b.hour)) return null;
 
   const { data, error } = await supabase
