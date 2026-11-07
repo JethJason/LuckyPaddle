@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { sendCancellation, sendConfirmation, sendRejection } from "@/lib/email";
-import { cancelApprovedBooking, databaseConfigured, deleteApprovedBooking, listBookings, review } from "@/lib/store";
+import { cancelApprovedBooking, databaseConfigured, deleteApprovedBooking, deleteCancelledBooking, listBookings, review } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   if (!databaseConfigured()) return NextResponse.json({ error: NOT_CONFIGURED }, { status: 503 });
 
   const { id, action, reason } = await req.json().catch(() => ({}));
-  if (!id || (action !== "approve" && action !== "reject" && action !== "cancel" && action !== "delete"))
+  if (!id || (action !== "approve" && action !== "reject" && action !== "cancel" && action !== "delete" && action !== "purge"))
     return NextResponse.json({ error: "Invalid review request." }, { status: 400 });
 
   try {
@@ -41,6 +41,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Only an approved customer reservation can be cancelled." }, { status: 409 });
       const emailed = await sendCancellation(booking);
       return NextResponse.json({ ok: true, booking, emailed });
+    }
+
+    if (action === "purge") {
+      const booking = await deleteCancelledBooking(id);
+      if (!booking)
+        return NextResponse.json({ error: "Only a cancelled booking can be deleted here." }, { status: 409 });
+      return NextResponse.json({ ok: true, booking, deleted: true });
     }
 
     if (action === "delete") {
