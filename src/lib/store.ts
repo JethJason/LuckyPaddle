@@ -449,6 +449,24 @@ export async function deleteApprovedBooking(id: string) {
   return data ? rowToBooking(data as BookingRow) : null;
 }
 
+/** Permanently delete a cancelled booking (and its receipt file) from the database. */
+export async function deleteCancelledBooking(id: string) {
+  const { data, error } = await supabase
+    .from("bookings")
+    .delete()
+    .eq("id", id)
+    .eq("status", "cancelled")
+    .select()
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const booking = rowToBooking(data as BookingRow);
+  if (booking.proofPath) {
+    await supabase.storage.from(PROOF_BUCKET).remove([booking.proofPath]).catch(() => undefined);
+  }
+  return booking;
+}
+
 /** Admin-created reservation. It is approved immediately and blocks the slot. */
 export async function createReservation(info: {
   date: string;
