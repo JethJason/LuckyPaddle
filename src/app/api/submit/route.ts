@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BALLS_PRICE, MAX_PADDLES, PADDLE_RENT } from "@/lib/config";
 import { databaseConfigured, getBooking, getInventory, submitPayment } from "@/lib/store";
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export async function POST(req: NextRequest) {
   if (!databaseConfigured())
