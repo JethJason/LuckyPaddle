@@ -40,3 +40,9 @@ body {
 }
 :focus-visible { outline: 3px solid #22c55e; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Keep wide admin tables inside the viewport; swipe/scroll within the container. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
