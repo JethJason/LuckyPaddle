@@ -104,7 +104,7 @@ export async function sendConfirmation(b: Booking): Promise<boolean> {
   const tips = [
     "Please arrive a few minutes before your scheduled time so you can get settled and start playing promptly.",
     "Outside food and drinks are welcome; please enjoy them only in the designated lounge area.",
-    "Small personal snacks and non-alcoholic drinks have no corkage. Alcoholic drinks incur a corkage fee of ₱100 per bottle. Large food setups, food trays, mobile carts, and large items such as lechon incur a flat corkage fee of ₱1,500.",
+    "There is no corkage fee for food, snacks, or non-alcoholic drinks. Alcoholic drinks incur a corkage fee of ₱100 per bottle.",
     "If you plan to have a party setup, please inform us in advance. We strongly recommend booking an extra hour before your slot for setup and an extra hour after for cleanup.",
     "Food, snacks, and beverages, including alcoholic drinks, are also available for purchase at the venue.",
     "Please help keep the facility clean for everyone by practicing Clean As You Go before your time ends.",

@@ -4,7 +4,7 @@ export const COURTS = [{ id: 1, name: "Private Court" }];
 export const courtName = (id: number) => COURTS.find((c) => c.id === id)?.name ?? `Court ${id}`;
 export const OPEN_HOUR = 8; // 8:00 AM
 export const CLOSE_HOUR = 25; // 1:00 AM next day (last booking can go to 1:00 AM)
-export const PRICE_PER_HOUR = 350; // PHP; fallback and lowest current rate
+export const PRICE_PER_HOUR = 450; // PHP; fallback and lowest current rate
 export const HOLD_MINUTES = 10;
 export const PADDLE_RENT = 100; // PHP per paddle
 export const BALLS_PRICE = 100; // PHP per ball
