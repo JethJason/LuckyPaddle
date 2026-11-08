@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import AdminNav from "./AdminNav";
 import Clover from "./Clover";
 import { hourLabel, peso } from "@/lib/config";
 import type { Booking, Status } from "@/lib/store";
@@ -51,6 +52,13 @@ const prettyDate = (value: string) =>
     day: "numeric",
     year: "numeric",
   });
+
+function shiftIsoDate(value: string, days: number) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const next = new Date(`${value}T00:00:00`);
+  next.setDate(next.getDate() + days);
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}`;
+}
 
 function StatusBadge({ status }: { status: Status }) {
   return (
@@ -109,11 +117,6 @@ export default function AdminDashboard() {
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [proofPreview]);
-
-  async function signOut() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    window.location.href = "/admin/login";
-  }
 
   async function review(id: string, action: "approve" | "reject") {
     setBusyId(id);
@@ -217,44 +220,12 @@ export default function AdminDashboard() {
   });
 
   return (
-    <main className="mx-auto max-w-6xl px-5 pb-16">
-      <header className="sticky top-3 z-20 mt-3 flex items-center justify-between rounded-full px-5 py-3 glass">
-        <div className="flex items-center gap-2">
-          <Clover className="h-6 w-6 text-court" />
-          <div>
-            <div className="font-display text-lg font-bold leading-tight">Lucky Paddle</div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-pine/45">Admin</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <a href="/admin/inventory" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Inventory</a>
-          <a href="/admin/reserve" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Reserve</a>
-          <a href="/admin/rate" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Court rates</a>
-          {data?.admin.role === "owner" && <a href="/admin/users" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Users</a>}
-          <a href="/admin/settings" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">Settings</a>
-          {data?.admin && <span className="hidden text-xs font-medium text-pine/55 xl:inline">Signed in as {data.admin.displayName}</span>}
-          <a href="/" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">View site</a>
-          <button onClick={signOut} className="rounded-full bg-pine px-4 py-2 text-sm font-medium text-white transition hover:bg-court">
-            Sign out
-          </button>
-        </div>
-      </header>
+    <main className="mx-auto max-w-6xl overflow-x-hidden px-5 pb-16">
+      <AdminNav current="dashboard" role={data?.admin.role} displayName={data?.admin.displayName} />
 
-      <section className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="font-display text-4xl font-bold">Dashboard</h1>
-          <p className="mt-1 text-pine/65">Bookings and court data for your private court.</p>
-        </div>
-        <div className="text-left sm:text-right">
-          <label htmlFor="dashboard-date" className="text-xs font-semibold uppercase tracking-wider text-pine/45">Schedule date</label>
-          <input
-            id="dashboard-date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="mt-1 block rounded-xl border border-white/80 bg-white/70 px-3 py-2 text-sm text-pine"
-          />
-        </div>
+      <section className="mt-8">
+        <h1 className="font-display text-4xl font-bold">Dashboard</h1>
+        <p className="mt-1 text-pine/65">Bookings and court data for your private court.</p>
       </section>
 
       {error && <p role="alert" className="mt-5 rounded-2xl bg-red-500/10 p-4 text-sm text-red-700">{error}</p>}
@@ -348,17 +319,50 @@ export default function AdminDashboard() {
 
           <section className="mt-5 grid items-stretch gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.35fr)]">
             <div className="glass flex h-full min-w-0 flex-col self-stretch rounded-3xl p-5 sm:p-6">
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h2 className="font-display text-xl font-semibold">Court schedule</h2>
                   <p className="text-sm text-pine/55">{data.court} · {prettyDate(data.date)}</p>
                 </div>
-                <button
-                  onClick={() => load(date)}
-                  className="rounded-full bg-white/70 px-3 py-1.5 text-xs font-medium text-pine/70 transition hover:bg-white"
-                >
-                  Refresh
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label="Previous day"
+                      onClick={() => setDate(shiftIsoDate(date || data.date, -1))}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/70 text-pine transition hover:bg-white"
+                    >
+                      <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden="true">
+                        <path d="M12.5 4.5 7 10l5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    <label className="sr-only" htmlFor="schedule-date">Schedule date</label>
+                    <input
+                      id="schedule-date"
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="h-11 min-w-0 rounded-xl border border-white/80 bg-white/80 px-3 text-sm text-pine"
+                    />
+                    <button
+                      type="button"
+                      aria-label="Next day"
+                      onClick={() => setDate(shiftIsoDate(date || data.date, 1))}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/70 text-pine transition hover:bg-white"
+                    >
+                      <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden="true">
+                        <path d="M7.5 4.5 13 10l-5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => load(date)}
+                    className="inline-flex h-11 items-center rounded-full bg-white/70 px-4 text-xs font-medium text-pine/70 transition hover:bg-white"
+                  >
+                    Refresh
+                  </button>
+                </div>
               </div>
 
               <div className="mt-4 min-h-0 max-h-[30rem] flex-1 space-y-2 overflow-y-auto pr-1">
@@ -455,7 +459,7 @@ export default function AdminDashboard() {
                   No bookings match these filters. Try changing or clearing the search criteria.
                 </div>
               ) : (
-                <div className="mt-4 min-h-0 max-h-[30rem] flex-1 overflow-auto">
+                <div className="table-scroll mt-4 min-h-0 max-h-[30rem] flex-1 overflow-auto">
                   <table className="w-full min-w-[680px] text-left text-sm">
                     <thead className="sticky top-0 z-10 bg-[#f3fbf5]/95 text-[10px] uppercase tracking-wider text-pine/45 backdrop-blur">
                       <tr>

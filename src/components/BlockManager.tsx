@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import Clover from "./Clover";
+import AdminNav from "./AdminNav";
 import { CLOSE_HOUR, OPEN_HOUR, hourLabel } from "@/lib/config";
 import type { Block } from "@/lib/store";
 
@@ -68,18 +68,10 @@ export default function BlockManager({ embedded = false }: { embedded?: boolean 
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:py-12">
+    <div className={`mx-auto max-w-3xl overflow-x-hidden ${embedded ? "" : "px-4 pb-16 sm:px-6"}`}>
       {!embedded && (
         <>
-          <header className="flex flex-wrap items-center justify-between gap-3">
-            <a href="/admin" className="flex items-center gap-2 font-display text-xl font-bold text-pine">
-              <Clover className="h-7 w-7 text-court" />
-              Lucky Paddle Admin
-            </a>
-            <a href="/admin" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60 hover:text-pine">
-              Back to dashboard
-            </a>
-          </header>
+          <AdminNav current="reserve" />
 
           <section className="mt-8">
             <h1 className="font-display text-3xl font-bold">Block time</h1>

@@ -46,7 +46,14 @@ const DAYS = Array.from({ length: BOOKING_WINDOW_DAYS }, (_, i) => {
   d.setDate(d.getDate() + i);
   return d;
 });
-const openingLabel = openingDay.toLocaleDateString("en-PH", { month: "long", day: "numeric", year: "numeric" });
+const MIN_BOOKABLE = iso(DAYS[0]);
+const MAX_BOOKABLE = iso(DAYS[DAYS.length - 1]);
+
+function shiftIsoDate(value: string, days: number) {
+  const next = new Date(`${value}T00:00:00`);
+  next.setDate(next.getDate() + days);
+  return iso(next);
+}
 const HIGHLIGHTS = ["bg-blue-50/80", "bg-yellow-50/80", "bg-red-50/80", "bg-emerald-50/80", "bg-purple-50/80"];
 const DOTS = ["bg-blue-400", "bg-yellow-400", "bg-red-400", "bg-emerald-400", "bg-purple-400"];
 
@@ -283,13 +290,45 @@ export default function Booking() {
     <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
       <div className="glass rounded-3xl p-5 sm:p-7">
         <div className="flex flex-wrap items-center gap-2">
-          <input type="date" value={date} min={iso(DAYS[0])} max={iso(DAYS[DAYS.length - 1])} onChange={(e) => setDate(e.target.value)}
-            className="rounded-2xl border border-white/80 bg-white/70 px-4 py-2 text-sm font-medium text-pine shadow-sm" />
-          {now.date && now.date < BOOKING_START_DATE && (
-            <span className="rounded-full bg-ball/50 px-3 py-1 text-xs font-semibold text-pine">
-              Bookings open {openingLabel}
-            </span>
-          )}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label="Previous day"
+              disabled={date <= MIN_BOOKABLE}
+              onClick={() => setDate(shiftIsoDate(date, -1))}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/80 bg-white/70 text-pine shadow-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden="true">
+                <path d="M12.5 4.5 7 10l5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <label className="sr-only" htmlFor="booking-date">Booking date</label>
+            <input
+              id="booking-date"
+              type="date"
+              value={date}
+              min={MIN_BOOKABLE}
+              max={MAX_BOOKABLE}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (!next) return;
+                if (next < MIN_BOOKABLE || next > MAX_BOOKABLE) return;
+                setDate(next);
+              }}
+              className="h-11 rounded-2xl border border-white/80 bg-white/70 px-3 text-sm font-medium text-pine shadow-sm sm:px-4"
+            />
+            <button
+              type="button"
+              aria-label="Next day"
+              disabled={date >= MAX_BOOKABLE}
+              onClick={() => setDate(shiftIsoDate(date, 1))}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/80 bg-white/70 text-pine shadow-sm transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden="true">
+                <path d="M7.5 4.5 13 10l-5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
