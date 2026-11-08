@@ -83,6 +83,9 @@ export default function Home() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-court">Find us</p>
           <h2 className="mt-2 font-display text-3xl font-bold">{LOCATION.name}</h2>
           <p className="mt-3 text-sm leading-relaxed text-pine/70">{LOCATION.address}</p>
+          <a href="tel:+639951164953" className="mt-2 w-fit text-sm font-semibold text-pine underline decoration-leaf/40 underline-offset-4 transition hover:text-court">
+            Call or text: +63 995 116 4953
+          </a>
           <a href={MAPS_URL} target="_blank" rel="noreferrer"
             className="mt-5 inline-flex w-fit rounded-full bg-court px-5 py-3 text-sm font-semibold text-white transition hover:bg-pine">
             Open in Google Maps
