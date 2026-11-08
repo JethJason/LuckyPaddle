@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import Clover from "./Clover";
+import AdminNav from "./AdminNav";
 
 type AdminUser = {
   id: string;
@@ -87,13 +87,8 @@ export default function AdminUsers() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-5 pb-16">
-      <header className="mt-6 flex items-center justify-between gap-3">
-        <a href="/admin" className="flex items-center gap-2 font-display text-xl font-bold text-pine">
-          <Clover className="h-7 w-7 text-court" /> Lucky Paddle Admin
-        </a>
-        <a href="/admin" className="rounded-full px-3 py-2 text-sm text-pine/70 transition hover:bg-white/60">Back to dashboard</a>
-      </header>
+    <main className="mx-auto max-w-4xl overflow-x-hidden px-5 pb-16">
+      <AdminNav current="users" role="owner" />
 
       <section className="mt-8">
         <h1 className="font-display text-4xl font-bold">Admin users</h1>

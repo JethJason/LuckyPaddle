@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import Clover from "./Clover";
+import AdminNav from "./AdminNav";
 import BlockManager from "./BlockManager";
 import {
   BOOKING_START_DATE,
@@ -96,26 +96,21 @@ export default function ReserveManager() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-5 pb-16">
-      <header className="mt-6 flex items-center justify-between gap-3">
-        <a href="/admin" className="flex items-center gap-2 font-display text-xl font-bold text-pine">
-          <Clover className="h-7 w-7 text-court" /> Lucky Paddle Admin
-        </a>
-        <a href="/admin" className="rounded-full px-3 py-2 text-sm text-pine/70 hover:bg-white/60">Back to dashboard</a>
-      </header>
+    <main className="mx-auto max-w-4xl overflow-x-hidden px-5 pb-16">
+      <AdminNav current="reserve" />
 
       <section className="mt-8">
         <h1 className="font-display text-4xl font-bold">Reserve</h1>
         <p className="mt-1 text-pine/65">Reserve a court time or block a period for maintenance and other unavailable times.</p>
       </section>
 
-      <div className="glass mt-6 inline-flex rounded-2xl p-1.5" role="tablist" aria-label="Reserve options">
+      <div className="glass mt-6 flex w-full rounded-2xl p-1.5 sm:inline-flex sm:w-auto" role="tablist" aria-label="Reserve options">
         <button type="button" role="tab" aria-selected={tab === "reserve"} onClick={() => setTab("reserve")}
-          className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition ${tab === "reserve" ? "bg-court text-white shadow" : "text-pine/65 hover:bg-white/70"}`}>
+          className={`min-h-11 flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:flex-none sm:px-5 ${tab === "reserve" ? "bg-court text-white shadow" : "text-pine/65 hover:bg-white/70"}`}>
           Reserve a time
         </button>
         <button type="button" role="tab" aria-selected={tab === "block"} onClick={() => setTab("block")}
-          className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition ${tab === "block" ? "bg-court text-white shadow" : "text-pine/65 hover:bg-white/70"}`}>
+          className={`min-h-11 flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:flex-none sm:px-5 ${tab === "block" ? "bg-court text-white shadow" : "text-pine/65 hover:bg-white/70"}`}>
           Block time
         </button>
       </div>
