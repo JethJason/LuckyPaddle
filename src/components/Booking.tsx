@@ -440,8 +440,7 @@ export default function Booking() {
         <div className="mt-4 rounded-2xl border border-white/70 bg-white/55 p-4 text-xs leading-relaxed text-pine/70">
           <b className="text-pine">Party setup?</b> If you plan to have a party setup, we strongly recommend booking an extra
           hour before your slot for setup and an extra hour after for cleanup. Please note that bringing in alcoholic
-          drinks incurs a corkage fee of ₱100 per bottle, while large food setups, food trays, mobile carts, or large
-          items such as lechon are subject to a flat corkage fee of ₱1,500.
+          drinks incurs a corkage fee of ₱100 per bottle. There is no corkage fee for food.
         </div>
       </div>
 
