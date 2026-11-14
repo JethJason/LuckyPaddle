@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import AdminNav from "./AdminNav";
-import { OPEN_HOUR, bookableHoursFor, closeHourFor, endHoursFor, hourLabel } from "@/lib/config";
+import { CLOSE_HOUR, OPEN_HOUR, hourLabel } from "@/lib/config";
 import type { Block } from "@/lib/store";
 
 export default function BlockManager({ embedded = false }: { embedded?: boolean }) {
@@ -14,17 +14,8 @@ export default function BlockManager({ embedded = false }: { embedded?: boolean 
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Hours follow the chosen date's closing time (10 PM from Nov 15, 2026; no date yet = current hours).
-  const CLOSE_HOUR = closeHourFor(date || null);
-  const HOURS = bookableHoursFor(date || null);
-  const END_HOURS = endHoursFor(date || null);
-  // Keep the selected range inside this date's opening hours (10 PM close from Nov 15, 2026).
-  useEffect(() => {
-    if (toHour <= CLOSE_HOUR && fromHour < CLOSE_HOUR) return;
-    const nextFrom = Math.min(fromHour, CLOSE_HOUR - 1);
-    setFromHour(nextFrom);
-    setToHour(Math.min(Math.max(toHour, nextFrom + 1), CLOSE_HOUR));
-  }, [CLOSE_HOUR, fromHour, toHour]);
+  const HOURS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + i);
+  const END_HOURS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + 1 + i);
 
   const load = useCallback(async () => {
     try {
@@ -108,7 +99,7 @@ export default function BlockManager({ embedded = false }: { embedded?: boolean 
           <label className="flex flex-col gap-1 text-xs font-medium text-pine/70">
             To
             <select value={toHour} onChange={(e) => setToHour(Number(e.target.value))} className="rounded-xl border border-white bg-white px-3 py-2 text-base font-semibold text-pine">
-              {END_HOURS.filter((h) => h > fromHour).map((h) => <option key={h} value={h}>{hourLabel(h)}</option>)}
+              {END_HOURS.map((h) => <option key={h} value={h}>{hourLabel(h)}</option>)}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium text-pine/70">

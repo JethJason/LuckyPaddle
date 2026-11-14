@@ -4,9 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Clover from "@/components/Clover";
 import {
   BALLS_PRICE,
+  BOOKABLE_HOURS,
   BOOKING_START_DATE,
   BOOKING_WINDOW_DAYS,
+  CLOSE_HOUR,
   COURTS,
+  END_HOURS,
   HOLD_MINUTES,
   MAX_PADDLES,
   MULTI_HOUR_DISCOUNT,
@@ -14,10 +17,7 @@ import {
   OPEN_HOUR,
   PADDLE_RENT,
   QR_IMAGE,
-  bookableHoursFor,
-  closeHourFor,
   courtName,
-  endHoursFor,
   hourLabel,
   peso,
 } from "@/lib/config";
@@ -36,6 +36,7 @@ interface Hold {
   amount: number;
 }
 
+const HOURS = BOOKABLE_HOURS;
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 const openingDay = startOfDay(new Date(`${BOOKING_START_DATE}T00:00:00`));
@@ -76,10 +77,6 @@ export default function Booking() {
   const [maxPaddles, setMaxPaddles] = useState(MAX_PADDLES);
   const [maxBalls, setMaxBalls] = useState(10);
   const [proof, setProof] = useState<File | null>(null);
-  // Opening hours depend on the selected date (10 PM close from Nov 15, 2026).
-  const CLOSE_HOUR = closeHourFor(date);
-  const HOURS = bookableHoursFor(date);
-  const END_HOURS = endHoursFor(date);
   const [qrOpen, setQrOpen] = useState(false);
   const [qrZoom, setQrZoom] = useState(1);
   const paymentPanelRef = useRef<HTMLElement>(null);
@@ -156,14 +153,6 @@ export default function Booking() {
   const unavailable = (h: number) => availabilityDate !== date || past(h) || (!!status[court]?.[h] && !inHold(h));
   const rangeUnavailable = (start: number, end: number) =>
     HOURS.some((h) => h >= start && h < end && unavailable(h));
-
-  // Keep the draft inside the selected date's opening hours (e.g. after switching to a 10 PM-close date).
-  useEffect(() => {
-    if (toHour <= CLOSE_HOUR && fromHour < CLOSE_HOUR) return;
-    const nextFrom = Math.min(fromHour, CLOSE_HOUR - 1);
-    setFromHour(nextFrom);
-    setToHour(Math.min(Math.max(toHour, nextFrom + 1), CLOSE_HOUR));
-  }, [date, CLOSE_HOUR, fromHour, toHour]);
 
   useEffect(() => {
     if (availabilityDate !== date || !rangeUnavailable(fromHour, toHour)) return;
@@ -356,7 +345,7 @@ export default function Booking() {
                 <Clover className="h-4 w-4" />
                 {COURTS[0].name}
               </span>
-              <span className="text-sm text-pine/60">Available {hourLabel(OPEN_HOUR)} - {hourLabel(CLOSE_HOUR)}</span>
+              <span className="text-sm text-pine/60">Available 8:00 AM - 1:00 AM</span>
             </>
           )}
         </div>
@@ -441,10 +430,10 @@ export default function Booking() {
           })}
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-pine/70">
-          {timeRates.map((rate, i) => rate.start >= CLOSE_HOUR ? null : (
+          {timeRates.map((rate, i) => (
             <span key={`${rate.start}-${rate.end}`} className="flex items-center gap-1">
               <span className={`h-2 w-2 rounded-full ${DOTS[i % DOTS.length]}`}></span>
-              {hourLabel(rate.start)}-{hourLabel(Math.min(rate.end, CLOSE_HOUR))} {peso(rate.price)}
+              {hourLabel(rate.start)}-{hourLabel(rate.end)} {peso(rate.price)}
             </span>
           ))}
         </div>
@@ -461,7 +450,7 @@ export default function Booking() {
           Your lucky booking
         </h3>
         {!hold ? (
-          <p className="mt-3 text-white/75">Available {hourLabel(OPEN_HOUR)} - {hourLabel(CLOSE_HOUR)} on {date}. Choose a start and end time, then hold it for {HOLD_MINUTES} minutes while you pay by QR.</p>
+          <p className="mt-3 text-white/75">Available 8:00 AM - 1:00 AM. Choose a start and end time, then hold it for {HOLD_MINUTES} minutes while you pay by QR.</p>
         ) : (
           <div className="mt-4 space-y-4">
             <div className="rounded-2xl bg-white/10 p-4">

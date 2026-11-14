@@ -4,12 +4,12 @@ import AdminNav from "./AdminNav";
 import BlockManager from "./BlockManager";
 import {
   BOOKING_START_DATE,
+  CLOSE_HOUR,
   COURTS,
+  END_HOURS,
   OPEN_HOUR,
-  bookableHoursFor,
-  closeHourFor,
+  BOOKABLE_HOURS,
   courtName,
-  endHoursFor,
   hourLabel,
   peso,
 } from "@/lib/config";
@@ -36,16 +36,6 @@ export default function ReserveManager() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const CLOSE_HOUR = closeHourFor(date);
-  const BOOKABLE_HOURS = bookableHoursFor(date);
-  const END_HOURS = endHoursFor(date);
-  // Keep the selected range inside this date's opening hours (10 PM close from Nov 15, 2026).
-  useEffect(() => {
-    if (toHour <= CLOSE_HOUR && fromHour < CLOSE_HOUR) return;
-    const nextFrom = Math.min(fromHour, CLOSE_HOUR - 1);
-    setFromHour(nextFrom);
-    setToHour(Math.min(Math.max(toHour, nextFrom + 1), CLOSE_HOUR));
-  }, [CLOSE_HOUR, fromHour, toHour]);
 
   const load = useCallback(async () => {
     try {
