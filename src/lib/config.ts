@@ -26,7 +26,7 @@ export const BOOKING_WINDOW_DAYS = 60;
 export const MAX_DURATION = 18;
 
 /** Staff who get an email whenever a customer submits a booking that needs approval. */
-export const PENDING_NOTIFY_EMAILS = ["jason12345sandoy@gmail.com"];
+export const PENDING_NOTIFY_EMAILS = ["jasonsandoy.contact@gmail.com"];
 export const ADMIN_URL = "https://lucky-paddle.vercel.app/admin";
 
 /** Payment proof uploads (Supabase Storage). */
