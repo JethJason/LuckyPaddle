@@ -1,4 +1,4 @@
-import { BRAND, courtName, hourLabel, peso } from "./config";
+import { ADMIN_URL, BRAND, PENDING_NOTIFY_EMAILS, courtName, hourLabel, peso } from "./config";
 import type { Booking } from "./store";
 
 type Sender = { name: string; email: string };
@@ -111,6 +111,10 @@ export async function sendConfirmation(b: Booking): Promise<boolean> {
     "Please take care of your personal belongings. Lucky Paddle is not liable for lost, stolen, or damaged items, or for injuries sustained while on the premises.",
     "All bookings are non-refundable, except in cases of severe weather calamities or unforeseen court maintenance issues.",
   ];
+  // Bookings that run past 10:00 PM get a quiet-hours reminder (residential area).
+  const QUIET_HOUR = 22;
+  const lateNight = b.hour + b.duration > QUIET_HOUR;
+  const noiseReminder = "Lucky Paddle is in a residential area. From 10:00 PM onward, please keep noise to a minimum (no loud music, shouting, or cheering) out of respect for our neighbors. Thank you!";
   const tipRows = tips.map((tip) => `
       <tr>
         <td valign="top" style="width:22px;padding:0 9px 12px 0;color:#31a56a;font-size:17px;line-height:20px">•</td>
@@ -141,6 +145,9 @@ export async function sendConfirmation(b: Booking): Promise<boolean> {
           <tr><td style="padding:0 30px 8px">
             <div style="padding:15px 17px;border-radius:12px;background:#f0f8d9;color:#31552f;font-size:13px;line-height:20px"><strong>Quick reminder:</strong> Please arrive a few minutes early and enjoy outside food and drinks in the designated lounge area.</div>
           </td></tr>
+          ${lateNight ? `<tr><td style="padding:8px 30px 8px">
+            <div style="padding:15px 17px;border-radius:12px;background:#fff4e0;border:1px solid #f3d9a4;color:#7a4b00;font-size:13px;line-height:20px"><strong>Quiet hours from 10:00 PM:</strong> ${noiseReminder}</div>
+          </td></tr>` : ""}
           <tr><td style="padding:20px 30px 8px">
             <h2 style="margin:0 0 15px;color:#123d2c;font-size:17px">Important information for your visit</h2>
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${tipRows}</table>
@@ -201,4 +208,46 @@ export async function sendCancellation(b: Booking): Promise<boolean> {
   </div>`;
   const subject = `Reservation cancelled · ${courtName(b.court)}, ${b.date} ${hourLabel(b.hour)}`;
   return deliverEmail(b.email, subject, html, "cancellation notice");
+}
+
+/** Tells staff (PENDING_NOTIFY_EMAILS) that a customer booking is waiting for approval. Never throws. */
+export async function sendPendingApprovalNotice(b: Booking): Promise<boolean> {
+  const recipients = PENDING_NOTIFY_EMAILS.filter((email) => email.includes("@"));
+  if (!recipients.length) return false;
+  try {
+    const time = `${hourLabel(b.hour)} – ${hourLabel(b.hour + b.duration)}`;
+    const row = (label: string, value: string | undefined) =>
+      value
+        ? `<tr><td style="padding:9px 0;color:#64776c">${label}</td><td align="right"><b>${escapeHtml(value)}</b></td></tr>`
+        : "";
+    const addOns = [b.paddles ? `${b.paddles} paddle${b.paddles === 1 ? "" : "s"}` : "", b.balls ? `${b.balls} ball${b.balls === 1 ? "" : "s"}` : ""]
+      .filter(Boolean)
+      .join(", ");
+    const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:24px auto;padding:28px;background:#f4faf5;border:1px solid #e2eee5;border-radius:18px;color:#123d2c">
+    <div style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#157448">${escapeHtml(BRAND)}</div>
+    <h2 style="margin:8px 0 12px;color:#123d2c">New booking pending approval</h2>
+    <p style="color:#425b4c;line-height:1.6">A customer submitted payment details. Please check the receipt and approve or reject the booking.</p>
+    <table style="width:100%;margin:18px 0;padding:8px 16px;background:#fff;border:1px solid #e2eee5;border-radius:12px;color:#123d2c;font-size:14px">
+      ${row("Name", b.name)}
+      ${row("Email", b.email)}
+      ${row("Phone", b.phone)}
+      ${row("Court", courtName(b.court))}
+      ${row("Date", b.date)}
+      ${row("Time", time)}
+      ${row("Add-ons", addOns || undefined)}
+      ${row("Amount", peso(b.amount))}
+      ${row("Payment reference", b.reference)}
+      ${row("Booking ref", b.id.slice(0, 8).toUpperCase())}
+    </table>
+    <p style="margin:20px 0"><a href="${escapeHtml(ADMIN_URL)}" style="display:inline-block;padding:12px 20px;background:#157448;color:#fff;text-decoration:none;border-radius:10px;font-weight:700">Open admin</a></p>
+  </div>`;
+    const subject = `New booking pending approval – ${b.date} ${time}`;
+    const results = await Promise.all(
+      recipients.map((to) => deliverEmail(to, subject, html, "pending approval notice")),
+    );
+    return results.some(Boolean);
+  } catch (error) {
+    console.error("[email] Could not send the pending approval notice:", error);
+    return false;
+  }
 }

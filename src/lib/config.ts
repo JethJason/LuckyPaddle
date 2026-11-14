@@ -25,6 +25,10 @@ export const BOOKING_WINDOW_DAYS = 60;
 /** Maximum block hours a player can book at once */
 export const MAX_DURATION = 18;
 
+/** Staff who get an email whenever a customer submits a booking that needs approval. */
+export const PENDING_NOTIFY_EMAILS = ["jason12345sandoy@gmail.com"];
+export const ADMIN_URL = "https://lucky-paddle.vercel.app/admin";
+
 /** Payment proof uploads (Supabase Storage). */
 export const PROOF_BUCKET = "payment-proofs";
 export const MAX_PROOF_BYTES = 4 * 1024 * 1024;
