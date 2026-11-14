@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-auth";
-import { CLOSE_HOUR, OPEN_HOUR } from "@/lib/config";
+import { OPEN_HOUR, closeHourFor } from "@/lib/config";
 import { addBlock, databaseConfigured, listBlocks, removeBlock } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (!databaseConfigured()) return NextResponse.json({ error: NOT_CONFIGURED }, { status: 503 });
   const { date, court = 1, hour, duration = 1, reason = "" } = await req.json().catch(() => ({}));
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return NextResponse.json({ error: "Invalid date" }, { status: 400 });
-  if (!Number.isInteger(hour) || hour < OPEN_HOUR || hour + duration > CLOSE_HOUR || duration < 1) {
+  if (!Number.isInteger(hour) || hour < OPEN_HOUR || !Number.isInteger(duration) || hour + duration > closeHourFor(date) || duration < 1) {
     return NextResponse.json({ error: "Invalid time range" }, { status: 400 });
   }
 
