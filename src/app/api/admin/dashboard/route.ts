@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { CLOSE_HOUR, COURTS, OPEN_HOUR } from "@/lib/config";
+import { COURTS, OPEN_HOUR, closeHourFor } from "@/lib/config";
 import { databaseConfigured, listBookings, type Booking } from "@/lib/store";
 import { manilaNow } from "@/lib/time";
 
@@ -25,12 +25,14 @@ export async function GET(req: NextRequest) {
     const approved = bookings.filter((b) => b.status === "approved");
     const pending = bookings.filter((b) => b.status === "awaiting_review");
     const held = bookings.filter((b) => b.status === "held");
-    const slotsPerDay = CLOSE_HOUR - OPEN_HOUR;
+    const todayClose = closeHourFor(now.date);
+    const slotsToday = todayClose - OPEN_HOUR;
+    const scheduleSlots = closeHourFor(date) - OPEN_HOUR;
 
     const approvedToday = approved.filter((b) => b.date === now.date);
     const occupiedHours = approvedToday.reduce((sum, b) => {
       const start = Math.max(b.hour, OPEN_HOUR);
-      const end = Math.min(b.hour + b.duration, CLOSE_HOUR);
+      const end = Math.min(b.hour + b.duration, todayClose);
       return sum + Math.max(0, end - start);
     }, 0);
 
@@ -42,12 +44,12 @@ export async function GET(req: NextRequest) {
         (b) => b.date > now.date || (b.date === now.date && b.hour > now.hour),
       ).length,
       todayBookings: approvedToday.length,
-      occupancy: Math.min(100, Math.round((occupiedHours / slotsPerDay) * 100)),
+      occupancy: Math.min(100, Math.round((occupiedHours / slotsToday) * 100)),
       activeHolds: held.length,
     };
 
     const activeForSchedule = bookings.filter((b) => ACTIVE.has(b.status));
-    const schedule = Array.from({ length: slotsPerDay }, (_, index) => {
+    const schedule = Array.from({ length: scheduleSlots }, (_, index) => {
       const hour = OPEN_HOUR + index;
       const booking =
         activeForSchedule.find(
