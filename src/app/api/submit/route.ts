@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BALLS_PRICE, MAX_PADDLES, PADDLE_RENT } from "@/lib/config";
 import { databaseConfigured, getBooking, getInventory, submitPayment } from "@/lib/store";
+import { sendPendingApprovalNotice } from "@/lib/email";
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
@@ -55,6 +56,13 @@ export async function POST(req: NextRequest) {
         { error: "Your 10-minute hold has expired. Pick the slot again." },
         { status: 410 },
       );
+
+    // Let staff know a booking is waiting for approval. Failures are logged and never block the customer.
+    try {
+      await sendPendingApprovalNotice(booking);
+    } catch (error) {
+      console.error("[submit] pending approval notice failed:", error);
+    }
 
     return NextResponse.json({ ok: true, id: booking.id, amount: booking.amount });
   } catch (error) {
