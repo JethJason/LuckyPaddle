@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin-auth";
-import { BOOKING_START_DATE, CLOSE_HOUR, COURTS, OPEN_HOUR } from "@/lib/config";
+import { BOOKING_START_DATE, COURTS, OPEN_HOUR, closeHourFor, hourLabel } from "@/lib/config";
 import {
   cancelReservation,
   createReservation,
@@ -50,8 +50,11 @@ export async function POST(req: NextRequest) {
   if (!Number.isInteger(court) || !COURTS.some((item) => item.id === court)) {
     return NextResponse.json({ error: "Choose a valid court." }, { status: 400 });
   }
-  if (!Number.isInteger(hour) || hour < OPEN_HOUR || !Number.isInteger(duration) || duration < 1 || hour + duration > CLOSE_HOUR) {
-    return NextResponse.json({ error: "Choose a time range within the court's opening hours." }, { status: 400 });
+  if (!Number.isInteger(hour) || hour < OPEN_HOUR || !Number.isInteger(duration) || duration < 1 || hour + duration > closeHourFor(date)) {
+    return NextResponse.json(
+      { error: `Choose a time range within the court's opening hours (${hourLabel(OPEN_HOUR)} – ${hourLabel(closeHourFor(date))} on this date).` },
+      { status: 400 },
+    );
   }
   if (typeof name !== "string" || !name.trim() || name.trim().length > 120) {
     return NextResponse.json({ error: "Enter a reservation name (up to 120 characters)." }, { status: 400 });
