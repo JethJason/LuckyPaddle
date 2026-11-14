@@ -3,21 +3,7 @@ export const TAGLINE = "One private court. Four-leaf luck.";
 export const COURTS = [{ id: 1, name: "Private Court" }];
 export const courtName = (id: number) => COURTS.find((c) => c.id === id)?.name ?? `Court ${id}`;
 export const OPEN_HOUR = 8; // 8:00 AM
-/** Original closing hour: 1:00 AM next day (last booking can go to 1:00 AM). Applies to dates before CLOSE_HOUR_CHANGE_DATE. */
-export const CLOSE_HOUR = 25;
-/** From this date (Philippines time) onward the court closes earlier. */
-export const CLOSE_HOUR_CHANGE_DATE = "2026-11-15";
-/** Closing hour from CLOSE_HOUR_CHANGE_DATE onward: 10:00 PM (last start slot 9:00 PM). */
-export const LATE_CLOSE_HOUR = 22;
-/** Last bookable end hour for a given YYYY-MM-DD date. */
-export const closeHourFor = (date?: string | null): number =>
-  !date || date >= CLOSE_HOUR_CHANGE_DATE ? LATE_CLOSE_HOUR : CLOSE_HOUR;
-/** Start hours a customer can book on a date (e.g. 8 ... 21). */
-export const bookableHoursFor = (date?: string | null) =>
-  Array.from({ length: closeHourFor(date) - OPEN_HOUR }, (_, i) => OPEN_HOUR + i);
-/** End hours a customer can pick on a date (e.g. 9 ... 22). */
-export const endHoursFor = (date?: string | null) =>
-  Array.from({ length: closeHourFor(date) - OPEN_HOUR }, (_, i) => OPEN_HOUR + 1 + i);
+export const CLOSE_HOUR = 25; // 1:00 AM next day (last booking can go to 1:00 AM)
 export const PRICE_PER_HOUR = 450; // PHP; fallback and lowest current rate
 export const HOLD_MINUTES = 10;
 export const PADDLE_RENT = 100; // PHP per paddle
@@ -72,7 +58,6 @@ export const LOCATION = {
 export const MAPS_URL = "https://www.google.com/maps/place/Lucky+Paddle+Pickleball+Court/@10.2728036,123.8570392,18z/data=!4m6!3m5!1s0x33a99d002ca80e91:0xb0eb88ed89a39ad4!8m2!3d10.272801!4d123.8594747!16s%2Fg%2F11z_0v3t6t";
 export const MAPS_EMBED_URL = `https://www.google.com/maps?q=${LOCATION.latitude},${LOCATION.longitude}&z=18&output=embed`;
 
-/** Back-compat: hours for the original 1 AM close. Prefer bookableHoursFor(date) / endHoursFor(date). */
 export const BOOKABLE_HOURS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + i);
 export const END_HOURS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + 1 + i);
 

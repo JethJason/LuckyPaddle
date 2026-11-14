@@ -111,6 +111,10 @@ export async function sendConfirmation(b: Booking): Promise<boolean> {
     "Please take care of your personal belongings. Lucky Paddle is not liable for lost, stolen, or damaged items, or for injuries sustained while on the premises.",
     "All bookings are non-refundable, except in cases of severe weather calamities or unforeseen court maintenance issues.",
   ];
+  // Bookings that run past 10:00 PM get a quiet-hours reminder (residential area).
+  const QUIET_HOUR = 22;
+  const lateNight = b.hour + b.duration > QUIET_HOUR;
+  const noiseReminder = "Lucky Paddle is in a residential area. From 10:00 PM onward, please keep noise to a minimum (no loud music, shouting, or cheering) out of respect for our neighbors. Thank you!";
   const tipRows = tips.map((tip) => `
       <tr>
         <td valign="top" style="width:22px;padding:0 9px 12px 0;color:#31a56a;font-size:17px;line-height:20px">•</td>
@@ -141,6 +145,9 @@ export async function sendConfirmation(b: Booking): Promise<boolean> {
           <tr><td style="padding:0 30px 8px">
             <div style="padding:15px 17px;border-radius:12px;background:#f0f8d9;color:#31552f;font-size:13px;line-height:20px"><strong>Quick reminder:</strong> Please arrive a few minutes early and enjoy outside food and drinks in the designated lounge area.</div>
           </td></tr>
+          ${lateNight ? `<tr><td style="padding:8px 30px 8px">
+            <div style="padding:15px 17px;border-radius:12px;background:#fff4e0;border:1px solid #f3d9a4;color:#7a4b00;font-size:13px;line-height:20px"><strong>Quiet hours from 10:00 PM:</strong> ${noiseReminder}</div>
+          </td></tr>` : ""}
           <tr><td style="padding:20px 30px 8px">
             <h2 style="margin:0 0 15px;color:#123d2c;font-size:17px">Important information for your visit</h2>
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${tipRows}</table>

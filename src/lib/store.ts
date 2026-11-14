@@ -1,4 +1,4 @@
-import { BOOKING_START_DATE, COURTS, closeHourFor, HOLD_MINUTES, OPEN_HOUR, PROOF_BUCKET } from "./config";
+import { BOOKING_START_DATE, CLOSE_HOUR, COURTS, HOLD_MINUTES, OPEN_HOUR, PROOF_BUCKET } from "./config";
 import { getPriceForRange } from "./pricing";
 import { supabase } from "./supabase";
 
@@ -193,14 +193,13 @@ export async function dayStatus(date: string) {
 
   const rank = { held: 0, pending: 1, booked: 2 } as const;
   const out: Record<number, Record<number, "held" | "pending" | "booked">> = {};
-  const closeHour = closeHourFor(date);
   for (const row of data ?? []) {
     
     
     const cell = row.status === "approved" ? "booked" : row.status === "awaiting_review" ? "pending" : "held";
     for (let i = 0; i < (row.duration ?? 1); i++) {
       const h = row.hour + i;
-      if (h >= closeHour) break;
+      if (h >= CLOSE_HOUR) break;
       const court = (out[row.court] ??= {});
       if (!court[h] || rank[cell] > rank[court[h]]) court[h] = cell;
     }
@@ -596,4 +595,4 @@ export const isValidSlot = (date: string, court: number, hour: number) =>
   date >= BOOKING_START_DATE &&
   COURTS.some((c) => c.id === court) &&
   hour >= OPEN_HOUR &&
-  hour < closeHourFor(date);
+  hour < CLOSE_HOUR;
