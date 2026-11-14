@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHold, databaseConfigured, getBooking, isBlocked, isValidSlot, releaseHold, updateHold } from "@/lib/store";
 import { manilaNow } from "@/lib/time";
-import { BOOKING_START_DATE, CLOSE_HOUR } from "@/lib/config";
+import { BOOKING_START_DATE, closeHourFor, hourLabel } from "@/lib/config";
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
@@ -16,8 +16,11 @@ export async function POST(req: NextRequest) {
   if (typeof date === "string" && date < BOOKING_START_DATE)
     return NextResponse.json({ error: "Bookings open on November 8, 2026." }, { status: 400 });
   if (!isValidSlot(date, court, hour)) return NextResponse.json({ error: "Invalid slot." }, { status: 400 });
-  if (!Number.isInteger(duration) || duration < 1 || hour + duration > CLOSE_HOUR)
-    return NextResponse.json({ error: "Invalid time range. Pick a start and end within opening hours." }, { status: 400 });
+  if (!Number.isInteger(duration) || duration < 1 || hour + duration > closeHourFor(date))
+    return NextResponse.json(
+      { error: `Invalid time range. Bookings on this date must end by ${hourLabel(closeHourFor(date))}.` },
+      { status: 400 },
+    );
 
   const now = manilaNow();
   if (date < now.date || (date === now.date && hour <= now.hour))
