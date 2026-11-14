@@ -33,7 +33,7 @@ export default function Home() {
             Your lucky private court is waiting. Book it in under a minute.
           </h1>
           <p className="relative mt-5 max-w-md text-lg text-pine/75">
-            One private court, open 8 AM to 1 AM (last slot ends at 1 AM). Pick a time, pay with GCash, and we email your confirmation once it is approved. Good luck on court.
+            One private court, open 8 AM to 10 PM (last slot ends at 10 PM). Pick a time, pay with GCash, and we email your confirmation once it is approved. Good luck on court.
           </p>
           <div className="relative mt-7 flex flex-wrap items-center gap-4">
             <a href="#book" className="rounded-full bg-court px-7 py-3.5 font-display text-lg font-semibold text-white shadow-lg transition hover:bg-pine">
